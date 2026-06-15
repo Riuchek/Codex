@@ -1,0 +1,13 @@
+{
+  "id": "codex",
+  "title": "Codex",
+  "version": "0.1.0",
+  "compatibility": {
+    "minimum": "11",
+    "verified": "12"
+  },
+  "authors": [{ "name": "Riuchek" }],
+  "esmodules": ["module.mjs"],
+  "styles": ["styles/codex.css"],
+  "description": "Grimório de campanha — estatísticas, alcunhas e diário de expedição."
+}

@@ -1,0 +1,450 @@
+@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
+
+/* ── Variáveis ────────────────────────────────────────────────── */
+:root {
+  --codex-parchment:     #f4e4c1;
+  --codex-parchment-dark: #e8d5a3;
+  --codex-ink:           #2c1810;
+  --codex-ink-light:     #5c3d2e;
+  --codex-red:           #8b1a1a;
+  --codex-gold:          #c9922a;
+  --codex-gold-light:    #e8b84b;
+  --codex-border:        #8b6914;
+  --codex-shadow:        rgba(0,0,0,0.6);
+  --codex-sidebar-bg:    #1a0f0a;
+}
+
+/* ── Janela do Foundry ────────────────────────────────────────── */
+#codex-app {
+  background: transparent !important;
+  box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 120px rgba(0,0,0,0.4) !important;
+  border: none !important;
+}
+
+#codex-app .window-header {
+  background: linear-gradient(135deg, #1a0f0a 0%, #2c1810 50%, #1a0f0a 100%) !important;
+  border-bottom: 2px solid var(--codex-gold) !important;
+  font-family: 'Cinzel', serif !important;
+  color: var(--codex-gold-light) !important;
+  text-shadow: 0 0 10px rgba(201,146,42,0.5) !important;
+}
+
+#codex-app .window-content {
+  padding: 0 !important;
+  background: transparent !important;
+  overflow: hidden !important;
+}
+
+/* ── Layout principal ─────────────────────────────────────────── */
+.codex-layout {
+  display: flex;
+  height: 100%;
+  background: var(--codex-parchment);
+  background-image:
+    url("https://www.transparenttextures.com/patterns/old-map.png");
+  position: relative;
+  overflow: hidden;
+}
+
+/* borda ornamentada interna */
+.codex-layout::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid var(--codex-border);
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.4;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────── */
+.codex-sidebar {
+  width: 110px;
+  min-width: 110px;
+  background: var(--codex-sidebar-bg);
+  background-image: url("https://www.transparenttextures.com/patterns/dark-leather.png");
+  border-right: 3px solid var(--codex-gold);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 8px;
+  overflow-y: auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* ornamento topo sidebar */
+.codex-sidebar::before {
+  content: '✦';
+  display: block;
+  text-align: center;
+  color: var(--codex-gold);
+  font-size: 14px;
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+.codex-actor-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.codex-actor-item:hover {
+  border-color: rgba(201,146,42,0.3);
+  background: rgba(201,146,42,0.05);
+}
+
+.codex-actor-item.active {
+  border-color: var(--codex-gold);
+  background: rgba(201,146,42,0.1);
+}
+
+.codex-actor-item img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--codex-gold);
+  box-shadow: 0 0 12px rgba(201,146,42,0.4);
+  transition: box-shadow 0.2s;
+}
+
+.codex-actor-item.active img {
+  box-shadow: 0 0 20px rgba(201,146,42,0.7);
+}
+
+.codex-actor-item span {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  color: var(--codex-parchment);
+  text-align: center;
+  word-break: break-word;
+  opacity: 0.9;
+}
+
+/* ── Área principal ───────────────────────────────────────────── */
+.codex-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.codex-detail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 20px 24px 16px;
+}
+
+/* ── Tabs ─────────────────────────────────────────────────────── */
+.codex-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--codex-border);
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.codex-tab {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  color: var(--codex-ink-light);
+  padding: 6px 16px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  transition: all 0.2s;
+  position: relative;
+  top: 2px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.codex-tab:hover {
+  color: var(--codex-ink);
+  background: rgba(139,105,20,0.1);
+}
+
+.codex-tab.active {
+  color: var(--codex-red);
+  background: var(--codex-parchment);
+  border-color: var(--codex-border);
+  font-weight: 600;
+}
+
+/* ── Stats ────────────────────────────────────────────────────── */
+.codex-stats {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.codex-stats li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  background: rgba(139,105,20,0.08);
+  border: 1px solid rgba(139,105,20,0.2);
+  border-radius: 3px;
+  font-family: 'EB Garamond', serif;
+  font-size: 15px;
+  color: var(--codex-ink);
+  position: relative;
+}
+
+/* linha decorativa à esquerda */
+.codex-stats li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  height: 60%;
+  width: 2px;
+  background: var(--codex-gold);
+  border-radius: 1px;
+  opacity: 0.6;
+}
+
+.codex-stats li strong {
+  font-family: 'Cinzel', serif;
+  font-size: 17px;
+  color: var(--codex-red);
+  font-weight: 700;
+  min-width: 32px;
+  text-align: right;
+}
+
+/* ── Alcunhas ─────────────────────────────────────────────────── */
+.codex-epithets-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.codex-input {
+  flex: 1;
+  background: rgba(139,105,20,0.08);
+  border: 1px solid var(--codex-border);
+  border-radius: 3px;
+  padding: 6px 10px;
+  font-family: 'EB Garamond', serif;
+  font-size: 14px;
+  color: var(--codex-ink);
+  outline: none;
+}
+
+.codex-input:focus {
+  border-color: var(--codex-gold);
+  box-shadow: 0 0 8px rgba(201,146,42,0.3);
+}
+
+.codex-input::placeholder {
+  color: var(--codex-ink-light);
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.codex-epithets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.codex-epithet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.epithet {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 2px;
+  font-family: 'EB Garamond', serif;
+  font-size: 14px;
+  background: rgba(139,105,20,0.1);
+  color: var(--codex-ink);
+  border: 1px solid var(--codex-border);
+  font-style: italic;
+}
+
+.epithet.auto {
+  border-color: var(--codex-red);
+  color: var(--codex-red);
+  background: rgba(139,26,26,0.08);
+}
+
+/* ── Botões ───────────────────────────────────────────────────── */
+.codex-btn {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #2c1810, #4a2c1a);
+  color: var(--codex-gold-light);
+  border: 1px solid var(--codex-gold);
+  border-radius: 3px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.codex-btn:hover {
+  background: linear-gradient(135deg, #4a2c1a, #6b3d22);
+  box-shadow: 0 0 12px rgba(201,146,42,0.4);
+}
+
+.codex-btn-icon {
+  background: transparent;
+  border: 1px solid rgba(139,105,20,0.3);
+  border-radius: 3px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  color: var(--codex-ink-light);
+}
+
+.codex-btn-icon:hover {
+  border-color: var(--codex-red);
+  background: rgba(139,26,26,0.1);
+}
+
+/* ── Diário ───────────────────────────────────────────────────── */
+.codex-journal-header {
+  margin-bottom: 16px;
+}
+
+.codex-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.codex-entry {
+  border: 1px solid rgba(139,105,20,0.3);
+  border-radius: 3px;
+  padding: 12px 16px;
+  background: rgba(139,105,20,0.05);
+  position: relative;
+}
+
+/* ornamento lateral */
+.codex-entry::before {
+  content: '§';
+  position: absolute;
+  left: -1px;
+  top: 12px;
+  font-family: 'EB Garamond', serif;
+  font-size: 20px;
+  color: var(--codex-gold);
+  opacity: 0.4;
+  line-height: 1;
+}
+
+.codex-entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.codex-entry-title {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--codex-red);
+  letter-spacing: 0.03em;
+}
+
+.codex-entry-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.codex-entry:hover .codex-entry-actions {
+  opacity: 1;
+}
+
+.codex-entry-content {
+  font-family: 'EB Garamond', serif;
+  font-size: 14px;
+  color: var(--codex-ink);
+  line-height: 1.6;
+  margin: 0 0 8px;
+  white-space: pre-wrap;
+}
+
+.codex-entry-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.codex-tag {
+  font-family: 'EB Garamond', serif;
+  font-size: 11px;
+  padding: 2px 8px;
+  background: rgba(139,105,20,0.12);
+  border: 1px solid rgba(139,105,20,0.25);
+  border-radius: 10px;
+  color: var(--codex-ink-light);
+  font-style: italic;
+}
+
+/* ── Vazio ────────────────────────────────────────────────────── */
+.codex-empty {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  color: var(--codex-ink-light);
+  opacity: 0.6;
+  font-size: 14px;
+  text-align: center;
+  margin-top: 32px;
+}
+
+/* ── Scrollbar temática ───────────────────────────────────────── */
+.codex-entries::-webkit-scrollbar,
+.codex-epithets-list::-webkit-scrollbar,
+.codex-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.codex-entries::-webkit-scrollbar-track,
+.codex-epithets-list::-webkit-scrollbar-track,
+.codex-sidebar::-webkit-scrollbar-track {
+  background: rgba(139,105,20,0.1);
+}
+
+.codex-entries::-webkit-scrollbar-thumb,
+.codex-epithets-list::-webkit-scrollbar-thumb,
+.codex-sidebar::-webkit-scrollbar-thumb {
+  background: var(--codex-gold);
+  border-radius: 3px;
+  opacity: 0.6;
+}

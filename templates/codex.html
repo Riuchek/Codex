@@ -1,0 +1,89 @@
+<div class="codex-layout">
+
+  <aside class="codex-sidebar">
+    {{#each actors}}
+    <div class="codex-actor-item" data-actor-id="{{this.id}}">
+      <img src="{{this.record.img}}" alt="{{this.record.name}}" />
+      <span>{{this.record.name}}</span>
+    </div>
+    {{/each}}
+  </aside>
+
+  <main class="codex-main">
+    {{#each actors}}
+    <div class="codex-detail" data-detail="{{this.id}}" style="display:none">
+
+      <nav class="codex-tabs">
+        <a class="codex-tab active" data-tab="stats">Estatísticas</a>
+        <a class="codex-tab" data-tab="journal">Diário</a>
+        <a class="codex-tab" data-tab="epithets">Alcunhas</a>
+      </nav>
+
+      {{!-- Stats --}}
+      <section class="codex-panel" data-panel="stats">
+        <ul class="codex-stats">
+          <li>Dano causado <strong>{{this.record.stats.damageDealt}}</strong></li>
+          <li>Dano recebido <strong>{{this.record.stats.damageTaken}}</strong></li>
+          <li>Críticos <strong>{{this.record.stats.criticals}}</strong></li>
+          <li>Falhas críticas <strong>{{this.record.stats.criticalFails}}</strong></li>
+          <li>Abates <strong>{{this.record.stats.killCount}}</strong></li>
+        </ul>
+      </section>
+
+      {{!-- Diário --}}
+      <section class="codex-panel" data-panel="journal" style="display:none">
+        <div class="codex-journal-header">
+          <button class="codex-btn" data-action="new-entry" data-actor-id="{{this.id}}">
+            + Nova entrada
+          </button>
+        </div>
+        <div class="codex-entries">
+          {{#each this.record.journal}}
+          <div class="codex-entry" data-entry-id="{{this.id}}">
+            <div class="codex-entry-header">
+              <span class="codex-entry-title">{{this.title}}</span>
+              <div class="codex-entry-actions">
+                <button class="codex-btn-icon" data-action="edit-entry" data-entry-id="{{this.id}}" data-actor-id="{{../id}}">✏️</button>
+                <button class="codex-btn-icon" data-action="delete-entry" data-entry-id="{{this.id}}" data-actor-id="{{../id}}">🗑️</button>
+              </div>
+            </div>
+            <p class="codex-entry-content">{{this.content}}</p>
+            <div class="codex-entry-tags">
+              {{#each this.tags}}
+              <span class="codex-tag">{{this}}</span>
+              {{/each}}
+            </div>
+          </div>
+          {{else}}
+          <p class="codex-empty">Nenhuma entrada ainda.</p>
+          {{/each}}
+        </div>
+      </section>
+
+      {{!-- Alcunhas --}}
+      <section class="codex-panel" data-panel="epithets" style="display:none">
+        <div class="codex-epithets-header">
+          <input class="codex-input" type="text" placeholder="Nova alcunha..." data-actor-id="{{this.id}}" />
+          <button class="codex-btn" data-action="add-epithet" data-actor-id="{{this.id}}">Adicionar</button>
+        </div>
+        <div class="codex-epithets-list">
+          {{#each this.record.epithets}}
+          <div class="codex-epithet-row">
+            <span class="epithet {{#if this.auto}}auto{{/if}}">
+              {{#if this.auto}}🎲{{else}}✍️{{/if}} {{this.label}}
+            </span>
+            {{#unless this.auto}}
+            <button class="codex-btn-icon" data-action="remove-epithet" data-label="{{this.label}}" data-actor-id="{{../id}}">🗑️</button>
+            {{/unless}}
+          </div>
+          {{else}}
+          <p class="codex-empty">Nenhuma alcunha ainda.</p>
+          {{/each}}
+        </div>
+      </section>
+
+    </div>
+    {{/each}}
+  </main>
+
+</div>

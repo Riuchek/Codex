@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+      "target": "ES2022",
+      "module": "ES2022",
+      "moduleResolution": "bundler",
+      "strict": true,
+      "sourceMap": true,
+      "types": ["@league-of-foundry-developers/foundry-vtt-types"]
+    },
+    "include": ["src/**/*"]
+  }
