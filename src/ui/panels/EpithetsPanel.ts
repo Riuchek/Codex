@@ -1,5 +1,8 @@
 import { getRecord, updateRecord } from "../../data/ActorRecord"
-import type { Epithet } from "../../types"
+import type { ActorRecord, Epithet } from "../../types"
+
+const escapeHtml = (value: string): string =>
+  foundry.utils.escapeHTML(value)
 
 export class EpithetsPanel {
   static activate(root: HTMLElement, signal: AbortSignal): void {
@@ -37,5 +40,37 @@ export class EpithetsPanel {
         })
       }, { signal })
     })
+  }
+
+  static refresh(root: HTMLElement, actorId: string, record?: ActorRecord): void {
+    const epithets = record?.epithets ?? getRecord(game.actors?.get(actorId)!).epithets
+    const list = root.querySelector(
+      `[data-detail="${actorId}"] [data-panel="epithets"] .codex-epithets-list`
+    )
+    if (!list) return
+
+    if (!epithets.length) {
+      list.innerHTML = `<p class="codex-empty">${escapeHtml(game.i18n?.localize("CODEX.EpithetEmpty") ?? "")}</p>`
+      return
+    }
+
+    list.innerHTML = epithets.map(e => this._renderRow(e, actorId)).join("")
+  }
+
+  private static _renderRow(e: Epithet, actorId: string): string {
+    const icon = e.icon
+      ? escapeHtml(e.icon)
+      : (e.auto ? "🎲" : "✍️")
+    const colorAttr = e.color ? ` data-color="${escapeHtml(e.color)}"` : ""
+    const removeBtn = e.auto ? "" : `
+      <button class="codex-btn-icon" data-action="remove-epithet" data-label="${escapeHtml(e.label)}" data-actor-id="${escapeHtml(actorId)}">🗑️</button>`
+
+    return `
+      <div class="codex-epithet-row">
+        <span class="epithet ${e.auto ? "auto" : ""}"${colorAttr}>
+          ${icon} ${escapeHtml(e.label)}
+        </span>
+        ${removeBtn}
+      </div>`
   }
 }

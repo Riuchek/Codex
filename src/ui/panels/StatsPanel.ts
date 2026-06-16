@@ -1,5 +1,6 @@
 import { getRecord, updateStats, updateRecord } from "../../data/ActorRecord"
 import type { CodexAppState } from "../CodexApp"
+import type { ActorRecord } from "../../types"
 
 export class StatsPanel {
   static activate(root: HTMLElement, state: CodexAppState, signal: AbortSignal): void {
@@ -59,6 +60,22 @@ export class StatsPanel {
           epithets: record.epithets.filter(e => !e.auto),
         })
       }, { signal })
+    })
+  }
+
+  static refresh(root: HTMLElement, actorId: string, record?: ActorRecord): void {
+    const stats = record ?? getRecord(game.actors?.get(actorId)!)
+    const detail = root.querySelector(`[data-detail="${actorId}"]`)
+    if (!detail) return
+
+    detail.querySelectorAll(".stat-edit").forEach(el => {
+      const stat = (el as HTMLElement).dataset.stat as keyof ActorRecord["stats"] | undefined
+      if (!stat) return
+      const li = el.closest("li")
+      const display = li?.querySelector(".stat-display")
+      const input = li?.querySelector(".stat-input") as HTMLInputElement | null
+      if (display) display.textContent = String(stats.stats[stat])
+      if (input && document.activeElement !== input) input.value = String(stats.stats[stat])
     })
   }
 }

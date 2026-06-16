@@ -1,6 +1,9 @@
 import { getRecord, updateRecord } from "../../data/ActorRecord"
 import { JournalEntryDialog } from "../dialogs/JournalEntryDialog"
-import type { JournalEntry } from "../../types"
+import type { ActorRecord, JournalEntry } from "../../types"
+
+const escapeHtml = (value: string): string =>
+  foundry.utils.escapeHTML(value)
 
 export class JournalPanel {
   static activate(root: HTMLElement, signal: AbortSignal): void {
@@ -62,5 +65,34 @@ export class JournalPanel {
         })
       }, { signal })
     })
+  }
+
+  static refresh(root: HTMLElement, actorId: string, record?: ActorRecord): void {
+    const journal = record?.journal ?? getRecord(game.actors?.get(actorId)!).journal
+    const container = root.querySelector(
+      `[data-detail="${actorId}"] [data-panel="journal"] .codex-entries`
+    )
+    if (!container) return
+
+    if (!journal.length) {
+      container.innerHTML = `<p class="codex-empty">${escapeHtml(game.i18n?.localize("CODEX.EntryEmpty") ?? "")}</p>`
+      return
+    }
+
+    container.innerHTML = journal.map(entry => `
+      <div class="codex-entry" data-entry-id="${escapeHtml(entry.id)}">
+        <div class="codex-entry-header">
+          <span class="codex-entry-title">${escapeHtml(entry.title)}</span>
+          <div class="codex-entry-actions">
+            <button class="codex-btn-icon" data-action="edit-entry" data-entry-id="${escapeHtml(entry.id)}" data-actor-id="${escapeHtml(actorId)}">✏️</button>
+            <button class="codex-btn-icon" data-action="delete-entry" data-entry-id="${escapeHtml(entry.id)}" data-actor-id="${escapeHtml(actorId)}">🗑️</button>
+          </div>
+        </div>
+        <p class="codex-entry-content">${escapeHtml(entry.content)}</p>
+        <div class="codex-entry-tags">
+          ${entry.tags.map(tag => `<span class="codex-tag">${escapeHtml(tag)}</span>`).join("")}
+        </div>
+      </div>
+    `).join("")
   }
 }

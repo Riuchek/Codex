@@ -1,5 +1,4 @@
-import { MODULE_ID } from "../constants"
-import { getRecord, updateStats } from "./ActorRecord"
+import { getRecord, updateRecord, updateStats } from "./ActorRecord"
 import { getSettings } from "./SettingsManager"
 import {
   getMessageRolls,
@@ -63,8 +62,7 @@ export function registerHooks() {
     if (!diff.name && !diff.img) return
 
     const current = getRecord(actor)
-    await actor.setFlag(MODULE_ID as any, "record", {
-      ...current,
+    await updateRecord(actor, {
       name: actor.name ?? current.name,
       img:  actor.img  ?? current.img,
     })

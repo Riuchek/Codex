@@ -55,11 +55,23 @@ codex/
 │   ├── types.ts                # All interfaces and types
 │   ├── constants.ts            # MODULE_ID, DEFAULT_RULES, pure helpers
 │   ├── data/
-│   │   ├── ActorRecord.ts      # CRUD for per-actor flags
+│   │   ├── ActorRecord.ts      # CRUD for per-actor flags (update queue)
 │   │   ├── SettingsManager.ts  # CRUD for module-level settings
-│   │   └── hooks.ts            # Foundry event listeners
+│   │   ├── rollUtils.ts        # Dice/roll parsing — no Foundry side effects
+│   │   ├── hooks.ts            # Foundry event listeners
+│   │   └── trackingActor.ts    # Optional actor tracking helper
+│   ├── engine/
+│   │   └── RuleEngine.ts       # Pure epithet rule evaluation
 │   └── ui/
-│       └── CodexApp.ts         # ApplicationV2 — main UI window
+│       ├── CodexApp.ts         # ApplicationV2 — shell, tabs, re-render
+│       ├── panels/
+│       │   ├── StatsPanel.ts
+│       │   ├── JournalPanel.ts
+│       │   ├── EpithetsPanel.ts
+│       │   └── SettingsPanel.ts
+│       └── dialogs/
+│           ├── RuleEditorDialog.ts
+│           └── JournalEntryDialog.ts
 │
 ├── templates/
 │   └── codex.html              # Handlebars template for the main window
@@ -142,22 +154,25 @@ Responsible for reading and writing actor flags. All writes go through an **upda
 
 ```ts
 getRecord(actor)
-// Reads the CodexRecord flag from the actor.
-// SIDE EFFECT: if no record exists, initializes one and writes it.
-// Returns the record (never undefined).
+// Pure read of the CodexRecord flag.
+// Returns EMPTY_RECORD() when no flag is set — does not write.
+
+initRecord(actor)
+// Explicit initialization. Writes only when no flag exists yet.
+// Called from CodexApp._prepareContext for all player-owned actors.
 
 updateRecord(actor, patch)
 // Shallow-merges patch into the current record and writes.
 // Goes through the update queue.
 
 updateStats(actor, patch)
-// Merges patch into stats, then runs the rule engine to
+// Merges patch into stats, then runs RuleEngine.apply to
 // recalculate automatic epithets. Goes through the update queue.
 ```
 
 **Update Queue pattern:**
 
-Each actor has its own Promise chain in `updateQueue: Map<string, Promise<void>>`. Every write operation appends to the chain, so concurrent updates are serialized per actor:
+Each actor has its own Promise chain in `updateQueue: Map<string, Promise<void>>`. Every write operation appends to the chain, so concurrent updates are serialized per actor. Failures are logged and surfaced via `ui.notifications.error`:
 
 ```
 update A ──► update B ──► update C
@@ -165,6 +180,21 @@ update A ──► update B ──► update C
 ```
 
 This prevents the lost-update problem where two reads happen before either write completes.
+
+### rollUtils (`src/data/rollUtils.ts`)
+
+Pure helpers for parsing Foundry chat rolls and detecting criticals. Used by `hooks.ts` — no Foundry writes, easy to unit test:
+
+```ts
+getMessageRolls(message)     // Parse Roll objects from a ChatMessage
+getMessageFlavor(message)    // Normalized flavor text
+matchesAttackFlavor(...)     // Check message/roll flavor against settings
+isD20Critical(roll)        // Natural 20 on a d20 term
+isD20CritFail(roll)          // Natural 1 on a d20 term
+isMaxOnMainDie(roll)         // Max on primary die (non-attack rolls)
+isNatural1OnMainDie(roll)    // Natural 1 on primary die
+getHpDelta(actor, diff, path) // HP decrease from preUpdateActor diff
+```
 
 ### SettingsManager (`src/data/SettingsManager.ts`)
 
@@ -193,7 +223,7 @@ Listens to Foundry events and calls data layer functions. No UI logic here.
 |---|---|
 | `createChatMessage` | Detects attack rolls to capture criticals, critical fails, and damage dealt |
 | `preUpdateActor` | Detects HP reduction to capture damage taken |
-| `updateActor` | Syncs `name` and `img` fields when the actor is renamed or avatar changed |
+| `updateActor` | Syncs `name` and `img` via `updateRecord` when the actor is renamed or avatar changed |
 
 **Attack detection logic:**
 
@@ -213,22 +243,22 @@ This is a Shadowdark-specific convention. Other systems may send rolls different
 
 ### CodexApp (`src/ui/CodexApp.ts`)
 
-Extends `HandlebarsApplicationMixin(ApplicationV2)` — the Foundry v13 application API.
+Extends `HandlebarsApplicationMixin(ApplicationV2)` — the Foundry v13 application API. Acts as a thin shell: actor/tab navigation, context preparation, and re-render orchestration. Panel-specific behavior lives in `src/ui/panels/`.
 
 **State:**
 ```ts
-_hookId: number       // ID of the updateActor hook, for cleanup on close
-_activeActorId: string  // Which actor is selected in the sidebar
-_activeTab: string      // Which tab is active ("stats" | "journal" | "epithets" | "settings")
+_state: CodexAppState   // { activeActorId, activeTab }
+_hookId: number         // updateActor hook ID, cleaned up on close
+_abortController        // Aborts DOM listeners from the previous render
 ```
 
 **Lifecycle:**
 
 ```
 render()
-  └─► _prepareContext()   // Fetches actors + settings, builds template data
+  └─► _prepareContext()   // initRecord for player actors, build template data
   └─► Handlebars renders codex.html
-  └─► _onRender()         // Attaches event listeners, restores UI state
+  └─► _onRender()         // AbortController + panel activation + updateActor hook
 ```
 
 **_prepareContext** returns:
@@ -241,11 +271,33 @@ render()
 }
 ```
 
+Before building context, `_prepareContext` calls `initRecord` for every player-owned actor. `initRecord` is idempotent — it returns immediately when a flag already exists.
+
 **Re-render strategy:**
 
-An `updateActor` hook is registered on render and cleaned up on close. Any actor update triggers `this.render()`, which re-runs `_prepareContext` and repaints the UI. State (`_activeActorId`, `_activeTab`) is restored in `_onRender` after each repaint.
+An `updateActor` hook triggers a full `render()` when the active tab is not Settings. While the GM is on the Settings tab, actor updates patch only the affected actor's stats, journal, epithets, and sidebar entry — the settings panel is left untouched.
 
-**Known issue:** event listeners accumulate if `_onRender` is called multiple times without a full DOM replacement. This is mitigated by the hook deduplication (`if (this._hookId !== -1) Hooks.off(...)`) but DOM listeners are not currently cleaned up between renders.
+Settings mutations call `SettingsPanel.refresh()` to rebuild rule lists and sync system inputs without repainting the window. Cross-client settings sync uses the `clientSettingChanged` hook the same way.
+
+DOM listeners from the previous render are removed via `AbortController.abort()` before attaching new ones. Settings actions use event delegation on the app root, so they survive partial DOM updates inside the settings panel.
+
+### Panels (`src/ui/panels/`)
+
+Each panel exposes a static `activate(root, signal, ...)` method. All writes go through `updateRecord` or `updateStats` in the data layer.
+
+| Panel | Responsibility |
+|---|---|
+| `StatsPanel` | Inline stat editing, reset stats (keeps manual epithets) |
+| `JournalPanel` | Create, edit, delete journal entries |
+| `EpithetsPanel` | Add/remove manual epithets |
+| `SettingsPanel` | HP path, attack flavor, epithet rule CRUD (GM only). `refresh()` rebuilds rule lists in place. |
+
+### Dialogs (`src/ui/dialogs/`)
+
+| Dialog | Purpose |
+|---|---|
+| `RuleEditorDialog` | Create/edit an `EpithetRule` |
+| `JournalEntryDialog` | Create/edit a `JournalEntry` |
 
 ### Template (`templates/codex.html`)
 
@@ -284,7 +336,7 @@ Settings are edited inside the Codex window (Settings tab, GM only), not in Foun
 
 ## Rule Engine
 
-Epithet rules are evaluated in `ActorRecord.ts` after every `updateStats` call.
+Epithet rules are evaluated by `RuleEngine` (`src/engine/RuleEngine.ts`) — a pure class with no Foundry dependencies. `ActorRecord.updateStats` calls `RuleEngine.apply` after merging stat changes.
 
 **Evaluation logic:**
 
@@ -373,8 +425,8 @@ For strings with variables, use `game.i18n.format("CODEX.Key", { variable: value
 ### Local Development
 
 ```bash
-npm run build    # single build → dist/
-npm run watch    # rebuild on file change → dist/
+yarn build    # single build → dist/
+yarn watch    # rebuild on file change → dist/
 ```
 
 A symlink from `dist/` to `{FoundryData}/modules/codex/` enables live development: save a file, Vite rebuilds in ~25ms, F5 in the browser picks up changes.
@@ -399,8 +451,8 @@ Defined in `.github/workflows/release.yml`. Triggered by pushing a version tag (
 
 **Steps:**
 1. Checkout repository
-2. `npm ci` — clean install
-3. `npm run build` — produces `dist/`
+2. `yarn install --frozen-lockfile` — clean install
+3. `yarn build` — produces `dist/`
 4. Inject tag version into `dist/module.json` via `jq`
 5. `zip -r codex.zip dist/` — package the module
 6. Publish GitHub Release with `codex.zip` and `module.json` as assets
@@ -420,27 +472,25 @@ https://github.com/Riuchek/Codex/releases/latest/download/module.json
 
 ## Known Limitations
 
-1. **DOM listeners accumulate between renders** — `_onRender` adds new listeners on each call without removing old ones. Should use `AbortController` or replace DOM nodes.
+1. **Attack detection is heuristic** — relies on `message.flavor` containing a configurable string. Systems that don't include recognizable flavor text in attack messages will not have `damageDealt` or criticals captured.
 
-2. **`getRecord` has a write side effect** — initializing the record on first read is implicit and untestable. Should be split into `getRecord` (pure read, returns undefined if not set) and `initRecord` (explicit initialization).
+2. **`damageDealt` only captures weapon attacks** — spells, abilities, and other damage sources that don't match the attack flavor pattern are not counted.
 
-3. **`CodexApp` is a God Class** — all panel logic lives in one file. Should be split into panel-specific classes/modules.
-
-4. **No error boundaries in the UI** — async failures in dialogs or flag writes are silently swallowed. Should surface errors to the user via `ui.notifications.error`.
-
-5. **Attack detection is heuristic** — relies on `message.flavor` containing a configurable string. Systems that don't include recognizable flavor text in attack messages will not have `damageDealt` or criticals captured.
-
-6. **`damageDealt` only captures weapon attacks** — spells, abilities, and other damage sources that don't match the attack flavor pattern are not counted.
+3. **`getRecord` returns an empty default when no flag exists** — callers that need persisted data must call `initRecord` first (CodexApp does this in `_prepareContext`; hooks assume records exist for tracked actors).
 
 ---
 
 ## Improvement Roadmap
 
 ### Architecture
-- [ ] Split `CodexApp.ts` into panel modules (`StatsPanel`, `JournalPanel`, `EpithetsPanel`, `SettingsPanel`)
-- [ ] Extract `RuleEngine` as a pure class with no Foundry dependencies
-- [ ] Add `AbortController` to clean up DOM listeners between renders
-- [ ] Separate `getRecord` (pure read) from `initRecord` (explicit write)
+- [x] Split `CodexApp.ts` into panel modules (`StatsPanel`, `JournalPanel`, `EpithetsPanel`, `SettingsPanel`)
+- [x] Extract `RuleEngine` as a pure class with no Foundry dependencies
+- [x] Add `AbortController` to clean up DOM listeners between renders
+- [x] Separate `getRecord` (pure read) from `initRecord` (explicit write)
+- [x] Route all flag writes through `updateRecord` / `updateStats` (including `updateActor` hook)
+- [x] Extract roll/dice logic into `rollUtils.ts`
+- [x] Surface update queue failures via `ui.notifications.error`
+- [x] SettingsPanel: refresh only the settings panel instead of full Codex re-render
 
 ### Features
 - [ ] Rule editor: `+ Add Condition` button working inside the dialog

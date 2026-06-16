@@ -33,6 +33,7 @@
   padding: 0 !important;
   background: transparent !important;
   overflow: hidden !important;
+  color: var(--codex-ink);
 }
 
 /* ── Layout principal ─────────────────────────────────────────── */
@@ -485,6 +486,7 @@
 .codex-settings-panel {
   overflow-y: auto;
   flex: 1;
+  color: var(--codex-ink);
 }
 
 .settings-group {
@@ -538,6 +540,7 @@
   border-radius: 3px;
   font-family: 'EB Garamond', serif;
   font-size: 13px;
+  color: var(--codex-ink);
 }
 
 .rule-icon { font-size: 16px; }
@@ -545,6 +548,7 @@
 .rule-label {
   font-weight: 600;
   min-width: 120px;
+  color: var(--codex-ink);
 }
 
 .rule-conditions {
@@ -575,6 +579,7 @@
   flex-direction: column;
   gap: 10px;
   padding: 8px;
+  color: var(--codex-parchment);
 }
 
 .codex-rule-editor .rule-main-row,
@@ -584,24 +589,30 @@
   align-items: center;
 }
 
+.codex-rule-editor .codex-rule-input,
 .codex-rule-editor input,
 .codex-rule-editor select {
-  background: rgba(244,228,193,0.12);
-  border: 1px solid rgba(201,146,42,0.35);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(201, 146, 42, 0.45);
   border-radius: 3px;
   color: var(--codex-parchment);
   min-height: 32px;
+  font-family: 'EB Garamond', serif;
+  font-size: 14px;
+  padding: 4px 8px;
 }
 
+.codex-rule-editor .codex-rule-input:focus,
 .codex-rule-editor input:focus,
 .codex-rule-editor select:focus {
   border-color: var(--codex-gold);
-  box-shadow: 0 0 8px rgba(201,146,42,0.3);
+  box-shadow: 0 0 8px rgba(201, 146, 42, 0.35);
   outline: none;
 }
 
 .codex-rule-editor input::placeholder {
-  color: rgba(244,228,193,0.65);
+  color: rgba(244, 228, 193, 0.55);
+  font-style: italic;
 }
 
 .codex-rule-editor #rule-icon {
@@ -619,13 +630,15 @@
   flex: 0 0 44px;
   height: 32px;
   padding: 3px;
+  cursor: pointer;
 }
 
 .codex-rule-editor .rule-mode-row label {
   color: var(--codex-parchment);
-  font-size: 12px;
+  font-family: 'EB Garamond', serif;
+  font-size: 13px;
   line-height: 1.1;
-  width: 70px;
+  min-width: 110px;
 }
 
 .codex-rule-editor .rule-condition-row select {
@@ -634,13 +647,28 @@
 }
 
 .codex-rule-editor .cond-threshold {
-  flex: 0 0 96px;
-  width: 96px;
-  color: var(--codex-parchment);
+  flex: 0 0 72px;
+  width: 72px;
+  text-align: right;
 }
 
-.codex-rule-editor #add-condition {
+.codex-rule-editor .codex-btn-icon {
+  color: var(--codex-parchment);
+  border-color: rgba(201, 146, 42, 0.35);
+}
+
+.codex-rule-editor .codex-btn-icon:hover {
+  border-color: var(--codex-gold);
+  background: rgba(201, 146, 42, 0.15);
+}
+
+.codex-rule-editor .codex-btn-dialog {
   align-self: flex-start;
+}
+
+.codex-rule-editor option {
+  background: #2c1810;
+  color: var(--codex-parchment);
 }
 
 

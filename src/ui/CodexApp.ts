@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../constants"
 import { getRecord, initRecord } from "../data/ActorRecord"
-import { getSettings } from "../data/SettingsManager"
+import { CODEX_SETTINGS_KEY, getSettings } from "../data/SettingsManager"
 import { StatsPanel }    from "./panels/StatsPanel"
 import { JournalPanel }  from "./panels/JournalPanel"
 import { EpithetsPanel } from "./panels/EpithetsPanel"
@@ -17,6 +17,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
   private _state: CodexAppState = { activeActorId: "", activeTab: "stats" }
   private _hookId: number = -1
+  private _settingsHookId: number = -1
   private _abortController: AbortController | null = null
 
   static override DEFAULT_OPTIONS = {
@@ -88,15 +89,49 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
     EpithetsPanel.activate(this.element, signal)
     if (game.user?.isGM) SettingsPanel.activate(this.element, signal)
 
-    // re-render on actor updates
     if (this._hookId !== -1) Hooks.off("updateActor" as any, this._hookId)
-    this._hookId = Hooks.on("updateActor" as any, () => void this.render())
+    this._hookId = Hooks.on("updateActor" as any, (actor: Actor) => {
+      if (this._state.activeTab === "settings") {
+        this._patchActorView(actor.id ?? "")
+        return
+      }
+      void this.render()
+    })
+
+    if (this._settingsHookId !== -1) Hooks.off("clientSettingChanged" as any, this._settingsHookId)
+    this._settingsHookId = Hooks.on("clientSettingChanged" as any, (module: string, key: string) => {
+      if (module !== MODULE_ID || key !== CODEX_SETTINGS_KEY) return
+      SettingsPanel.refresh(this.element)
+    })
   }
 
   override async _onClose(options: object): Promise<void> {
     await super._onClose(options)
     this._abortController?.abort()
     if (this._hookId !== -1) Hooks.off("updateActor" as any, this._hookId)
+    if (this._settingsHookId !== -1) Hooks.off("clientSettingChanged" as any, this._settingsHookId)
+  }
+
+  private _patchActorView(actorId: string): void {
+    if (!actorId) return
+    const actor = game.actors?.get(actorId)
+    if (!actor) return
+
+    const record = getRecord(actor)
+    StatsPanel.refresh(this.element, actorId, record)
+    JournalPanel.refresh(this.element, actorId, record)
+    EpithetsPanel.refresh(this.element, actorId, record)
+    this._patchSidebarActor(actorId, record)
+  }
+
+  private _patchSidebarActor(actorId: string, record: ActorRecord): void {
+    const item = this.element.querySelector(`.codex-actor-item[data-actor-id="${actorId}"]`)
+    if (!item) return
+
+    const img = item.querySelector("img")
+    const name = item.querySelector("span")
+    if (img) img.src = record.img
+    if (name) name.textContent = record.name
   }
 
   private _selectActor(actorId: string): void {

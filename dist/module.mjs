@@ -491,8 +491,7 @@ function registerHooks() {
 	Hooks.on("updateActor", async (actor, diff) => {
 		if (!diff.name && !diff.img) return;
 		const current = getRecord(actor);
-		await actor.setFlag(MODULE_ID, "record", {
-			...current,
+		await updateRecord(actor, {
 			name: actor.name ?? current.name,
 			img: actor.img ?? current.img
 		});
@@ -588,6 +587,20 @@ var StatsPanel = class {
 			}, { signal });
 		});
 	}
+	static refresh(root, actorId, record) {
+		const stats = record ?? getRecord(game.actors?.get(actorId));
+		const detail = root.querySelector(`[data-detail="${actorId}"]`);
+		if (!detail) return;
+		detail.querySelectorAll(".stat-edit").forEach((el) => {
+			const stat = el.dataset.stat;
+			if (!stat) return;
+			const li = el.closest("li");
+			const display = li?.querySelector(".stat-display");
+			const input = li?.querySelector(".stat-input");
+			if (display) display.textContent = String(stats.stats[stat]);
+			if (input && document.activeElement !== input) input.value = String(stats.stats[stat]);
+		});
+	}
 };
 //#endregion
 //#region src/ui/dialogs/JournalEntryDialog.ts
@@ -653,6 +666,7 @@ var JournalEntryDialog = class {
 };
 //#endregion
 //#region src/ui/panels/JournalPanel.ts
+var escapeHtml$3 = (value) => foundry.utils.escapeHTML(value);
 var JournalPanel = class {
 	static activate(root, signal) {
 		root.querySelectorAll("[data-action='new-entry']").forEach((el) => {
@@ -702,9 +716,34 @@ var JournalPanel = class {
 			}, { signal });
 		});
 	}
+	static refresh(root, actorId, record) {
+		const journal = record?.journal ?? getRecord(game.actors?.get(actorId)).journal;
+		const container = root.querySelector(`[data-detail="${actorId}"] [data-panel="journal"] .codex-entries`);
+		if (!container) return;
+		if (!journal.length) {
+			container.innerHTML = `<p class="codex-empty">${escapeHtml$3(game.i18n?.localize("CODEX.EntryEmpty") ?? "")}</p>`;
+			return;
+		}
+		container.innerHTML = journal.map((entry) => `
+      <div class="codex-entry" data-entry-id="${escapeHtml$3(entry.id)}">
+        <div class="codex-entry-header">
+          <span class="codex-entry-title">${escapeHtml$3(entry.title)}</span>
+          <div class="codex-entry-actions">
+            <button class="codex-btn-icon" data-action="edit-entry" data-entry-id="${escapeHtml$3(entry.id)}" data-actor-id="${escapeHtml$3(actorId)}">✏️</button>
+            <button class="codex-btn-icon" data-action="delete-entry" data-entry-id="${escapeHtml$3(entry.id)}" data-actor-id="${escapeHtml$3(actorId)}">🗑️</button>
+          </div>
+        </div>
+        <p class="codex-entry-content">${escapeHtml$3(entry.content)}</p>
+        <div class="codex-entry-tags">
+          ${entry.tags.map((tag) => `<span class="codex-tag">${escapeHtml$3(tag)}</span>`).join("")}
+        </div>
+      </div>
+    `).join("");
+	}
 };
 //#endregion
 //#region src/ui/panels/EpithetsPanel.ts
+var escapeHtml$2 = (value) => foundry.utils.escapeHTML(value);
 var EpithetsPanel = class {
 	static activate(root, signal) {
 		root.querySelectorAll("[data-action='add-epithet']").forEach((el) => {
@@ -735,9 +774,47 @@ var EpithetsPanel = class {
 			}, { signal });
 		});
 	}
+	static refresh(root, actorId, record) {
+		const epithets = record?.epithets ?? getRecord(game.actors?.get(actorId)).epithets;
+		const list = root.querySelector(`[data-detail="${actorId}"] [data-panel="epithets"] .codex-epithets-list`);
+		if (!list) return;
+		if (!epithets.length) {
+			list.innerHTML = `<p class="codex-empty">${escapeHtml$2(game.i18n?.localize("CODEX.EpithetEmpty") ?? "")}</p>`;
+			return;
+		}
+		list.innerHTML = epithets.map((e) => this._renderRow(e, actorId)).join("");
+	}
+	static _renderRow(e, actorId) {
+		const icon = e.icon ? escapeHtml$2(e.icon) : e.auto ? "🎲" : "✍️";
+		const colorAttr = e.color ? ` data-color="${escapeHtml$2(e.color)}"` : "";
+		const removeBtn = e.auto ? "" : `
+      <button class="codex-btn-icon" data-action="remove-epithet" data-label="${escapeHtml$2(e.label)}" data-actor-id="${escapeHtml$2(actorId)}">🗑️</button>`;
+		return `
+      <div class="codex-epithet-row">
+        <span class="epithet ${e.auto ? "auto" : ""}"${colorAttr}>
+          ${icon} ${escapeHtml$2(e.label)}
+        </span>
+        ${removeBtn}
+      </div>`;
+	}
 };
 //#endregion
 //#region src/ui/dialogs/RuleEditorDialog.ts
+var STATS = [
+	"killCount",
+	"criticals",
+	"criticalFails",
+	"damageDealt",
+	"damageTaken"
+];
+var OPS = [
+	">=",
+	"<=",
+	"==",
+	">",
+	"<"
+];
+var escapeHtml$1 = (value) => foundry.utils.escapeHTML(value);
 var RuleEditorDialog = class {
 	static async open(rule, actorId) {
 		const isNew = !rule;
@@ -755,117 +832,38 @@ var RuleEditorDialog = class {
 				threshold: 1
 			}]
 		};
-		const conditionsHTML = current.conditions.map((c, i) => `
-      <div class="rule-condition-row" data-index="${i}">
-        <select class="cond-stat">
-          ${[
-			"killCount",
-			"criticals",
-			"criticalFails",
-			"damageDealt",
-			"damageTaken"
-		].map((s) => `<option value="${s}" ${c.stat === s ? "selected" : ""}>${s}</option>`).join("")}
-        </select>
-        <select class="cond-op">
-          ${[
-			">=",
-			"<=",
-			"==",
-			">",
-			"<"
-		].map((op) => `<option value="${op}" ${c.operator === op ? "selected" : ""}>${op}</option>`).join("")}
-        </select>
-        <input class="cond-threshold codex-input" type="number"
-          value="${c.threshold}" style="width:70px"/>
-        <button class="codex-btn-icon remove-condition" data-index="${i}">🗑️</button>
-      </div>
-    `).join("");
 		const result = await foundry.applications.api.DialogV2.prompt({
 			window: { title: isNew ? "New Epithet Rule" : "Edit Epithet Rule" },
 			content: `
-        <div style="display:flex;flex-direction:column;gap:10px;padding:8px">
-          <div style="display:flex;gap:8px;align-items:center">
-            <input id="rule-icon"  type="text"  value="${current.icon}"
-              style="width:50px;text-align:center" placeholder="⚔️"/>
-            <input id="rule-label" type="text"  value="${current.label}"
-              style="flex:1" placeholder="Epithet name"/>
-            <input id="rule-color" type="color" value="${current.color}"
-              style="width:40px;height:32px;padding:2px"/>
+        <div class="codex-rule-editor">
+          <div class="rule-main-row">
+            <input id="rule-icon" class="codex-rule-input" type="text"
+              value="${escapeHtml$1(current.icon)}" placeholder="⚔️"/>
+            <input id="rule-label" class="codex-rule-input" type="text"
+              value="${escapeHtml$1(current.label)}" placeholder="Epithet name"/>
+            <input id="rule-color" type="color" value="${escapeHtml$1(current.color)}"/>
           </div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <label style="font-size:12px">Conditions match:</label>
-            <select id="rule-mode">
+          <div class="rule-mode-row">
+            <label>Conditions match:</label>
+            <select id="rule-mode" class="codex-rule-input">
               <option value="all" ${current.conditionMode === "all" ? "selected" : ""}>ALL (AND)</option>
               <option value="any" ${current.conditionMode === "any" ? "selected" : ""}>ANY (OR)</option>
             </select>
           </div>
-          <div id="rule-conditions">${conditionsHTML}</div>
-          <button id="add-condition" class="codex-btn" style="align-self:flex-start">
+          <div id="rule-conditions">
+            ${current.conditions.map((c, i) => this._conditionRowHTML(c, i)).join("")}
+          </div>
+          <button type="button" id="add-condition" class="codex-btn codex-btn-dialog">
             + Add Condition
           </button>
         </div>
       `,
+			render: (_event, dialog) => {
+				this._wireDialog(dialog.element);
+			},
 			ok: {
 				label: "Save",
-				callback: (_e, _btn, dialog) => {
-					const el = dialog.element;
-					el.querySelector("#add-condition")?.addEventListener("click", () => {
-						const container = el.querySelector("#rule-conditions");
-						const idx = container.querySelectorAll(".rule-condition-row").length;
-						const row = document.createElement("div");
-						row.className = "rule-condition-row";
-						row.dataset.index = String(idx);
-						row.innerHTML = `
-              <select class="cond-stat">
-                ${[
-							"killCount",
-							"criticals",
-							"criticalFails",
-							"damageDealt",
-							"damageTaken"
-						].map((s) => `<option value="${s}">${s}</option>`).join("")}
-              </select>
-              <select class="cond-op">
-                ${[
-							">=",
-							"<=",
-							"==",
-							">",
-							"<"
-						].map((op) => `<option value="${op}">${op}</option>`).join("")}
-              </select>
-              <input class="cond-threshold codex-input" type="number" value="1" style="width:70px"/>
-              <button class="codex-btn-icon remove-condition">🗑️</button>
-            `;
-						row.querySelector(".remove-condition")?.addEventListener("click", () => row.remove());
-						container.appendChild(row);
-					});
-					el.querySelectorAll(".remove-condition").forEach((btn) => {
-						btn.addEventListener("click", () => btn.closest(".rule-condition-row")?.remove());
-					});
-					const label = el.querySelector("#rule-label").value.trim();
-					const color = el.querySelector("#rule-color").value;
-					const icon = el.querySelector("#rule-icon").value.trim();
-					const conditionMode = el.querySelector("#rule-mode").value;
-					const conditions = [];
-					el.querySelectorAll(".rule-condition-row").forEach((row) => {
-						const stat = row.querySelector(".cond-stat").value;
-						const operator = row.querySelector(".cond-op").value;
-						const threshold = parseInt(row.querySelector(".cond-threshold").value) || 0;
-						conditions.push({
-							stat,
-							operator,
-							threshold
-						});
-					});
-					return {
-						label,
-						color,
-						icon,
-						conditionMode,
-						conditions
-					};
-				}
+				callback: (_e, _btn, dialog) => this._readForm(dialog.element)
 			}
 		});
 		if (!result?.label) return null;
@@ -874,57 +872,175 @@ var RuleEditorDialog = class {
 			...result
 		};
 	}
+	static _wireDialog(el) {
+		el.querySelector("#add-condition")?.addEventListener("click", (e) => {
+			e.preventDefault();
+			this._addConditionRow(el);
+		});
+		el.querySelectorAll(".remove-condition").forEach((btn) => {
+			btn.addEventListener("click", (e) => {
+				e.preventDefault();
+				btn.closest(".rule-condition-row")?.remove();
+			});
+		});
+	}
+	static _addConditionRow(el) {
+		const container = el.querySelector("#rule-conditions");
+		if (!container) return;
+		const row = document.createElement("div");
+		row.innerHTML = this._conditionRowHTML({
+			stat: "killCount",
+			operator: ">=",
+			threshold: 1
+		}, 0);
+		const element = row.firstElementChild;
+		element.querySelector(".remove-condition")?.addEventListener("click", (e) => {
+			e.preventDefault();
+			element.remove();
+		});
+		container.appendChild(element);
+	}
+	static _conditionRowHTML(c, _i) {
+		return `
+      <div class="rule-condition-row">
+        <select class="cond-stat codex-rule-input">
+          ${STATS.map((s) => `<option value="${s}" ${c.stat === s ? "selected" : ""}>${s}</option>`).join("")}
+        </select>
+        <select class="cond-op codex-rule-input">
+          ${OPS.map((op) => `<option value="${op}" ${c.operator === op ? "selected" : ""}>${op}</option>`).join("")}
+        </select>
+        <input class="cond-threshold codex-rule-input" type="number"
+          value="${c.threshold}" min="0"/>
+        <button type="button" class="codex-btn-icon remove-condition">🗑️</button>
+      </div>`;
+	}
+	static _readForm(el) {
+		const label = el.querySelector("#rule-label").value.trim();
+		const color = el.querySelector("#rule-color").value;
+		const icon = el.querySelector("#rule-icon").value.trim();
+		const conditionMode = el.querySelector("#rule-mode").value;
+		const conditions = [];
+		el.querySelectorAll(".rule-condition-row").forEach((row) => {
+			const stat = row.querySelector(".cond-stat").value;
+			const operator = row.querySelector(".cond-op").value;
+			const threshold = parseInt(row.querySelector(".cond-threshold").value) || 0;
+			conditions.push({
+				stat,
+				operator,
+				threshold
+			});
+		});
+		return {
+			label,
+			color,
+			icon,
+			conditionMode,
+			conditions
+		};
+	}
 };
 //#endregion
 //#region src/ui/panels/SettingsPanel.ts
+var escapeHtml = (value) => foundry.utils.escapeHTML(value);
+function formatConditions(rule) {
+	return rule.conditions.map((c, i) => {
+		const join = i < rule.conditions.length - 1 ? ` ${rule.conditionMode} ` : "";
+		return `${c.stat} ${c.operator} ${c.threshold}${join}`;
+	}).join("");
+}
+function renderRuleRow(rule) {
+	return `
+    <div class="settings-rule-row" data-rule-id="${escapeHtml(rule.id)}">
+      <span class="rule-icon">${escapeHtml(rule.icon ?? "")}</span>
+      <span class="rule-label" data-color="${escapeHtml(rule.color ?? "")}">${escapeHtml(rule.label)}</span>
+      <span class="rule-conditions">${escapeHtml(formatConditions(rule))}</span>
+      <div class="rule-actions">
+        <button class="codex-btn-icon" data-action="edit-rule" data-rule-id="${escapeHtml(rule.id)}">✎</button>
+        <button class="codex-btn-icon" data-action="delete-rule" data-rule-id="${escapeHtml(rule.id)}">🗑️</button>
+      </div>
+    </div>`;
+}
+function renderRulesList(rules, emptyMessage) {
+	if (!rules.length) return `<p class="codex-empty">${escapeHtml(emptyMessage)}</p>`;
+	return rules.map(renderRuleRow).join("");
+}
 var SettingsPanel = class {
 	static activate(root, signal) {
-		root.querySelectorAll("[data-action='save-system-settings']").forEach((el) => {
-			el.addEventListener("click", async () => {
-				const hpPath = root.querySelector("#setting-hpPath")?.value.trim();
-				const attackFlavor = root.querySelector("#setting-attackFlavor")?.value.trim();
-				if (!hpPath) return;
-				await saveSettings({
-					hpPath,
-					attackFlavor
-				});
-				ui.notifications?.info("Codex | Settings saved.");
-			}, { signal });
+		root.addEventListener("click", (e) => void this._handleClick(root, e), { signal });
+	}
+	static refresh(root) {
+		const settings = getSettings();
+		const globalRules = settings.rules.filter((r) => r.scope === "global");
+		root.querySelectorAll(".codex-settings-panel").forEach((panel) => {
+			const actorId = panel.closest(".codex-detail")?.dataset.detail ?? "";
+			const actorRules = settings.rules.filter((r) => r.scope === "actor" && r.actorId === actorId);
+			panel.querySelector(".settings-global-rules-list").innerHTML = renderRulesList(globalRules, "No global rules yet.");
+			panel.querySelector(".settings-actor-rules-list").innerHTML = renderRulesList(actorRules, "No rules for this character yet.");
+			this._syncSystemInputs(panel, settings);
 		});
-		root.querySelectorAll("[data-action='new-global-rule']").forEach((el) => {
-			el.addEventListener("click", async () => {
-				const rule = await RuleEditorDialog.open(null);
-				if (!rule) return;
-				await saveRule(rule);
-			}, { signal });
+	}
+	static _syncSystemInputs(panel, settings) {
+		const hpInput = panel.querySelector("[data-setting=\"hpPath\"]");
+		const flavorInput = panel.querySelector("[data-setting=\"attackFlavor\"]");
+		if (hpInput && document.activeElement !== hpInput) hpInput.value = settings.hpPath;
+		if (flavorInput && document.activeElement !== flavorInput) flavorInput.value = settings.attackFlavor;
+	}
+	static async _handleClick(root, e) {
+		const target = e.target.closest("[data-action]");
+		if (!target?.closest(".codex-settings-panel")) return;
+		switch (target.dataset.action) {
+			case "save-system-settings":
+				await this._saveSystemSettings(root);
+				break;
+			case "new-global-rule":
+				await this._saveNewRule(root, null);
+				break;
+			case "new-actor-rule":
+				await this._saveNewRule(root, target.dataset.actorId ?? "");
+				break;
+			case "edit-rule":
+				await this._editRule(root, target.dataset.ruleId ?? "");
+				break;
+			case "delete-rule":
+				await this._deleteRule(root, target.dataset.ruleId ?? "");
+				break;
+		}
+	}
+	static async _saveSystemSettings(root) {
+		const panel = root.querySelector(".codex-settings-panel");
+		const hpPath = (panel?.querySelector("[data-setting=\"hpPath\"]"))?.value.trim();
+		const attackFlavor = (panel?.querySelector("[data-setting=\"attackFlavor\"]"))?.value.trim();
+		if (!hpPath) return;
+		await saveSettings({
+			hpPath,
+			attackFlavor
 		});
-		root.querySelectorAll("[data-action='new-actor-rule']").forEach((el) => {
-			el.addEventListener("click", async () => {
-				const actorId = el.dataset.actorId ?? "";
-				const rule = await RuleEditorDialog.open(null, actorId);
-				if (!rule) return;
-				await saveRule(rule);
-			}, { signal });
-		});
-		root.querySelectorAll("[data-action='edit-rule']").forEach((el) => {
-			el.addEventListener("click", async () => {
-				const ruleId = el.dataset.ruleId ?? "";
-				const existing = getSettings().rules.find((r) => r.id === ruleId) ?? null;
-				const rule = await RuleEditorDialog.open(existing);
-				if (!rule) return;
-				await saveRule(rule);
-			}, { signal });
-		});
-		root.querySelectorAll("[data-action='delete-rule']").forEach((el) => {
-			el.addEventListener("click", async () => {
-				const ruleId = el.dataset.ruleId ?? "";
-				if (!await foundry.applications.api.DialogV2.confirm({
-					window: { title: "Delete Rule" },
-					content: "<p>Delete this epithet rule? Characters who earned it will keep their epithet.</p>"
-				})) return;
-				await deleteRule(ruleId);
-			}, { signal });
-		});
+		this.refresh(root);
+		ui.notifications?.info("Codex | Settings saved.");
+	}
+	static async _saveNewRule(root, actorId) {
+		const rule = await RuleEditorDialog.open(null, actorId ?? void 0);
+		if (!rule) return;
+		await saveRule(rule);
+		this.refresh(root);
+		ui.notifications?.info("Codex | Rule saved.");
+	}
+	static async _editRule(root, ruleId) {
+		const existing = getSettings().rules.find((r) => r.id === ruleId) ?? null;
+		const rule = await RuleEditorDialog.open(existing);
+		if (!rule) return;
+		await saveRule(rule);
+		this.refresh(root);
+		ui.notifications?.info("Codex | Rule saved.");
+	}
+	static async _deleteRule(root, ruleId) {
+		if (!await foundry.applications.api.DialogV2.confirm({
+			window: { title: "Delete Rule" },
+			content: "<p>Delete this epithet rule? Characters who earned it will keep their epithet.</p>"
+		})) return;
+		await deleteRule(ruleId);
+		this.refresh(root);
+		ui.notifications?.info("Codex | Rule deleted.");
 	}
 };
 //#endregion
@@ -936,6 +1052,7 @@ var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 		activeTab: "stats"
 	};
 	_hookId = -1;
+	_settingsHookId = -1;
 	_abortController = null;
 	static DEFAULT_OPTIONS = {
 		id: "codex-app",
@@ -990,12 +1107,42 @@ var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 		EpithetsPanel.activate(this.element, signal);
 		if (game.user?.isGM) SettingsPanel.activate(this.element, signal);
 		if (this._hookId !== -1) Hooks.off("updateActor", this._hookId);
-		this._hookId = Hooks.on("updateActor", () => void this.render());
+		this._hookId = Hooks.on("updateActor", (actor) => {
+			if (this._state.activeTab === "settings") {
+				this._patchActorView(actor.id ?? "");
+				return;
+			}
+			this.render();
+		});
+		if (this._settingsHookId !== -1) Hooks.off("clientSettingChanged", this._settingsHookId);
+		this._settingsHookId = Hooks.on("clientSettingChanged", (module, key) => {
+			if (module !== "codex" || key !== "codexSettings") return;
+			SettingsPanel.refresh(this.element);
+		});
 	}
 	async _onClose(options) {
 		await super._onClose(options);
 		this._abortController?.abort();
 		if (this._hookId !== -1) Hooks.off("updateActor", this._hookId);
+		if (this._settingsHookId !== -1) Hooks.off("clientSettingChanged", this._settingsHookId);
+	}
+	_patchActorView(actorId) {
+		if (!actorId) return;
+		const actor = game.actors?.get(actorId);
+		if (!actor) return;
+		const record = getRecord(actor);
+		StatsPanel.refresh(this.element, actorId, record);
+		JournalPanel.refresh(this.element, actorId, record);
+		EpithetsPanel.refresh(this.element, actorId, record);
+		this._patchSidebarActor(actorId, record);
+	}
+	_patchSidebarActor(actorId, record) {
+		const item = this.element.querySelector(`.codex-actor-item[data-actor-id="${actorId}"]`);
+		if (!item) return;
+		const img = item.querySelector("img");
+		const name = item.querySelector("span");
+		if (img) img.src = record.img;
+		if (name) name.textContent = record.name;
 	}
 	_selectActor(actorId) {
 		this._state.activeActorId = actorId;

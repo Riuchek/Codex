@@ -151,7 +151,7 @@
               Global Epithet Rules
               <button class="codex-btn" data-action="new-global-rule" data-actor-id="">+ Add Rule</button>
             </h3>
-            <div class="settings-rules-list">
+            <div class="settings-rules-list settings-global-rules-list">
               {{#each @root.globalRules}}
               <div class="settings-rule-row" data-rule-id="{{this.id}}">
                 <span class="rule-icon">{{this.icon}}</span>
@@ -177,7 +177,7 @@
               Rules for {{this.record.name}}
               <button class="codex-btn" data-action="new-actor-rule" data-actor-id="{{this.id}}">+ Add Rule</button>
             </h3>
-            <div class="settings-rules-list">
+            <div class="settings-rules-list settings-actor-rules-list">
               {{#each this.actorRules}}
               <div class="settings-rule-row" data-rule-id="{{this.id}}">
                 <span class="rule-icon">{{this.icon}}</span>
