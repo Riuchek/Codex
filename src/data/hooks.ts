@@ -1,7 +1,5 @@
-import { MODULE_ID } from "../constants"
-import { getRecord, incrementStats } from "./ActorRecord"
+import { getRecord, updateRecord, updateStats } from "./ActorRecord"
 import { getSettings } from "./SettingsManager"
-import { getTrackingActor } from "./trackingActor"
 import {
   getMessageRolls,
   getHpDelta,
@@ -23,20 +21,21 @@ export function registerHooks() {
     const rolls = getMessageRolls(message)
     if (!rolls.length) return
 
+    const current = getRecord(actor)
     const attackFlavor = getSettings().attackFlavor
     const isAttack = matchesAttackFlavor(message, attackFlavor)
 
     if (isAttack) {
-      const attackRoll = rolls[0]
-      const damageRoll = rolls[1]
-      const isCritical = isD20Critical(attackRoll)
+      const attackRoll     = rolls[0]
+      const damageRoll     = rolls[1]
+      const isCritical     = isD20Critical(attackRoll)
       const isCriticalFail = isD20CritFail(attackRoll)
-      const damageDealt = damageRoll?.total ?? 0
+      const damageDealt    = damageRoll?.total ?? 0
 
-      await incrementStats(actor, {
-        criticals: isCritical ? 1 : 0,
-        criticalFails: isCriticalFail ? 1 : 0,
-        damageDealt,
+      await updateStats(actor, {
+        criticals:     current.stats.criticals     + (isCritical ? 1 : 0),
+        criticalFails: current.stats.criticalFails + (isCriticalFail ? 1 : 0),
+        damageDealt:   current.stats.damageDealt   + damageDealt,
       })
 
       if (isCritical) {
@@ -45,13 +44,13 @@ export function registerHooks() {
       return
     }
 
-    const roll = rolls[0]
+    const roll       = rolls[0]
     const isCritical = isMaxOnMainDie(roll)
     const isCritFail = isNatural1OnMainDie(roll)
 
-    await incrementStats(actor, {
-      criticals: isCritical ? 1 : 0,
-      criticalFails: isCritFail ? 1 : 0,
+    await updateStats(actor, {
+      criticals:     current.stats.criticals     + (isCritical ? 1 : 0),
+      criticalFails: current.stats.criticalFails + (isCritFail ? 1 : 0),
     })
 
     if (isCritical) {
@@ -63,8 +62,7 @@ export function registerHooks() {
     if (!diff.name && !diff.img) return
 
     const current = getRecord(actor)
-    await actor.setFlag(MODULE_ID as any, "record", {
-      ...current,
+    await updateRecord(actor, {
       name: actor.name ?? current.name,
       img:  actor.img  ?? current.img,
     })
@@ -74,7 +72,11 @@ export function registerHooks() {
     if (!actor.hasPlayerOwner) return
     const delta = getHpDelta(actor, diff, getSettings().hpPath)
     if (delta === undefined) return
-    void incrementStats(actor, { damageTaken: delta })
+
+    const current = getRecord(actor)
+    void updateStats(actor, {
+      damageTaken: current.stats.damageTaken + delta,
+    })
   })
 }
 
@@ -83,9 +85,7 @@ function getActorFromMessage(message: ChatMessage): Actor | null {
   if (speakerActor) return speakerActor
 
   const speakerId = message.speaker?.actor
-  if (speakerId) {
-    return game.actors?.get(speakerId) ?? null
-  }
+  if (speakerId) return game.actors?.get(speakerId) ?? null
 
   const tokenId = message.speaker?.token
   if (tokenId) {
@@ -102,9 +102,7 @@ function getActorFromMessage(message: ChatMessage): Actor | null {
   }
 
   const controlled = canvas?.tokens?.controlled ?? []
-  if (controlled.length === 1 && controlled[0]?.actor) {
-    return controlled[0].actor
-  }
+  if (controlled.length === 1 && controlled[0]?.actor) return controlled[0].actor
 
-  return getTrackingActor()
+  return null
 }

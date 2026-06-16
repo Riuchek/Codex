@@ -3,6 +3,8 @@ import type { CodexSettings, EpithetRule } from "../types"
 
 const SETTINGS_KEY = "codexSettings"
 
+export const CODEX_SETTINGS_KEY = SETTINGS_KEY
+
 const DEFAULT_SETTINGS: CodexSettings = {
   hpPath: "system.attributes.hp.value",
   attackFlavor: "attacking",
