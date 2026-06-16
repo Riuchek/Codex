@@ -1,5 +1,8 @@
 //#region src/constants.ts
 var MODULE_ID = "codex";
+function getNestedValue(obj, path) {
+	return path.split(".").reduce((acc, key) => acc?.[key], obj);
+}
 var EPITHET_RULES = [
 	{
 		threshold: 25,
@@ -89,6 +92,7 @@ var EPITHET_RULES = [
 ];
 //#endregion
 //#region src/data/ActorRecord.ts
+var updateQueue = /* @__PURE__ */ new Map();
 var EMPTY_RECORD = () => ({
 	name: "",
 	img: "",
@@ -116,36 +120,47 @@ function getRecord(actor) {
 	return existing;
 }
 async function updateRecord(actor, patch) {
-	const updated = {
-		...getRecord(actor),
-		...patch
-	};
-	await actor.setFlag(MODULE_ID, "record", updated);
-}
-async function updateStats(actor, patch) {
-	const current = getRecord(actor);
-	const updatedStats = {
-		...current.stats,
-		...patch
-	};
-	const newEpithets = checkEpithetRules(updatedStats, current.epithets);
-	await actor.setFlag(MODULE_ID, "record", {
-		...current,
-		stats: updatedStats,
-		epithets: newEpithets
+	return enqueue(actor, async () => {
+		const current = getRecord(actor);
+		await actor.setFlag(MODULE_ID, "record", {
+			...current,
+			...patch
+		});
 	});
 }
-function checkEpithetRules(stats, current) {
-	const epithets = [...current];
-	const existingLabels = new Set(epithets.map((e) => e.label));
-	for (const rule of EPITHET_RULES) if (stats[rule.stat] >= rule.threshold && !existingLabels.has(rule.label)) {
-		epithets.push({
-			label: rule.label,
-			auto: true
+async function updateStats(actor, patch) {
+	return enqueue(actor, async () => {
+		const current = getRecord(actor);
+		const updatedStats = {
+			...current.stats,
+			...patch
+		};
+		const newEpithets = checkEpithetRules(updatedStats, current.epithets);
+		await actor.setFlag(MODULE_ID, "record", {
+			...current,
+			stats: updatedStats,
+			epithets: newEpithets
 		});
-		ui.notifications?.info(`Codex | ${rule.label} desbloqueada!`);
-	}
-	return epithets;
+	});
+}
+function enqueue(actor, fn) {
+	const id = actor.id ?? "";
+	const next = (updateQueue.get(id) ?? Promise.resolve()).then(fn).catch((err) => {
+		console.error(`Codex | erro ao atualizar ${actor.name}:`, err);
+	});
+	updateQueue.set(id, next);
+	return next;
+}
+function checkEpithetRules(stats, current) {
+	const manual = current.filter((e) => !e.auto);
+	const auto = [];
+	for (const rule of EPITHET_RULES) if (stats[rule.stat] >= rule.threshold) auto.push({
+		label: rule.label,
+		auto: true
+	});
+	const previous = new Set(current.filter((e) => e.auto).map((e) => e.label));
+	for (const epithet of auto) if (!previous.has(epithet.label)) ui.notifications?.info(`Codex | Nova alcunha desbloqueada: ${epithet.label}!`);
+	return [...manual, ...auto];
 }
 //#endregion
 //#region src/data/hooks.ts
@@ -156,7 +171,8 @@ function registerHooks() {
 		if (!actor) return;
 		const current = getRecord(actor);
 		const flavor = message.flavor?.toLowerCase() ?? "";
-		if (flavor.includes("attacking") || flavor.includes("attack")) {
+		const attackFlavor = (game.settings?.get("codex", "attackFlavor") ?? "attacking").toLowerCase();
+		if (flavor.includes(attackFlavor)) {
 			const attackRoll = message.rolls?.[0];
 			const damageRoll = message.rolls?.[1];
 			const d20 = attackRoll?.dice.find((d) => d.faces === 20);
@@ -193,9 +209,10 @@ function registerHooks() {
 		});
 	});
 	Hooks.on("preUpdateActor", (actor, diff) => {
-		const newHp = diff?.system?.attributes?.hp?.value;
+		const hpPath = game.settings?.get("codex", "hpPath") ?? "system.attributes.hp.value";
+		const newHp = getNestedValue(diff, hpPath);
 		if (newHp === void 0) return;
-		const oldHp = actor.system?.attributes?.hp?.value;
+		const oldHp = getNestedValue(actor, hpPath);
 		if (oldHp === void 0) return;
 		const delta = oldHp - newHp;
 		if (delta <= 0) return;
@@ -217,6 +234,8 @@ function getActorFromMessage(message) {
 var { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 	_hookId = -1;
+	_activeActorId = "";
+	_activeTab = "stats";
 	static DEFAULT_OPTIONS = {
 		id: "codex-app",
 		window: {
@@ -230,18 +249,43 @@ var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 	};
 	static PARTS = { main: { template: `modules/${MODULE_ID}/templates/codex.html` } };
 	async _prepareContext(_options) {
-		return { actors: (game.actors?.contents ?? []).filter((a) => a.hasPlayerOwner).map((a) => ({
-			id: a.id ?? "",
-			record: getRecord(a)
-		})) };
+		return {
+			actors: (game.actors?.contents ?? []).filter((a) => a.hasPlayerOwner).map((a) => ({
+				id: a.id ?? "",
+				record: getRecord(a)
+			})),
+			isGM: game.user?.isGM ?? false
+		};
 	}
 	async _onRender(context, options) {
 		await super._onRender(context, options);
-		const first = this.element.querySelector(".codex-actor-item");
-		if (first) this._selectActor(first.dataset.actorId ?? "");
+		const targetId = this._activeActorId || this.element.querySelector(".codex-actor-item")?.dataset.actorId || "";
+		this._selectActor(targetId);
+		this.element.querySelectorAll("[data-action='reset-stats']").forEach((el) => {
+			el.addEventListener("click", async () => {
+				const actorId = el.dataset.actorId ?? "";
+				const actor = game.actors?.get(actorId);
+				if (!actor) return;
+				if (!await foundry.applications.api.DialogV2.confirm({
+					window: { title: "Resetar estatísticas" },
+					content: `<p>Tem certeza? Todas as estatísticas de <strong>${actor.name}</strong> serão zeradas. Alcunhas automáticas também serão removidas.</p>`
+				})) return;
+				await updateRecord(actor, {
+					stats: {
+						damageDealt: 0,
+						damageTaken: 0,
+						criticals: 0,
+						criticalFails: 0,
+						killCount: 0
+					},
+					epithets: getRecord(actor).epithets.filter((e) => !e.auto)
+				});
+			});
+		});
 		this.element.querySelectorAll(".codex-actor-item").forEach((el) => {
 			el.addEventListener("click", () => {
 				const id = el.dataset.actorId ?? "";
+				this._activeTab = "stats";
 				this._selectActor(id);
 			});
 		});
@@ -289,6 +333,40 @@ var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 				this._removeEpithet(actorId, label);
 			});
 		});
+		this.element.querySelectorAll(".stat-edit").forEach((el) => {
+			el.addEventListener("click", (e) => {
+				e.stopPropagation();
+				const li = el.closest("li");
+				const display = li.querySelector(".stat-display");
+				const input = li.querySelector(".stat-input");
+				const actorId = el.dataset.actorId ?? "";
+				const stat = el.dataset.stat ?? "";
+				const editing = input.style.display === "none";
+				display.style.display = editing ? "none" : "";
+				input.style.display = editing ? "" : "none";
+				if (editing) {
+					input.focus();
+					input.select();
+					const save = async () => {
+						const val = parseInt(input.value) || 0;
+						const actor = game.actors?.get(actorId);
+						if (!actor) return;
+						await updateStats(actor, {
+							...getRecord(actor).stats,
+							[stat]: val
+						});
+					};
+					input.addEventListener("blur", save, { once: true });
+					input.addEventListener("keydown", (ev) => {
+						if (ev.key === "Enter") input.blur();
+						if (ev.key === "Escape") {
+							input.style.display = "none";
+							display.style.display = "";
+						}
+					}, { once: true });
+				}
+			});
+		});
 		if (this._hookId !== -1) Hooks.off("updateActor", this._hookId);
 		this._hookId = Hooks.on("updateActor", () => {
 			this.render();
@@ -298,14 +376,19 @@ var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 		await super._onClose(options);
 		if (this._hookId !== -1) Hooks.off("updateActor", this._hookId);
 	}
-	_selectActor(actorId) {
+	_selectActor(actorId, tab) {
+		this._activeActorId = actorId;
 		this.element.querySelectorAll(".codex-actor-item").forEach((el) => el.classList.remove("active"));
 		this.element.querySelector(`[data-actor-id="${actorId}"]`)?.classList.add("active");
 		this.element.querySelectorAll(".codex-detail").forEach((el) => el.style.display = "none");
 		const detail = this.element.querySelector(`[data-detail="${actorId}"]`);
-		if (detail) detail.style.display = "flex";
+		if (detail) {
+			detail.style.display = "flex";
+			this._switchTab(detail, tab ?? this._activeTab);
+		}
 	}
 	_switchTab(detail, tab) {
+		this._activeTab = tab;
 		detail.querySelectorAll(".codex-tab").forEach((el) => el.classList.remove("active"));
 		detail.querySelector(`[data-tab="${tab}"]`)?.classList.add("active");
 		detail.querySelectorAll(".codex-panel").forEach((el) => el.style.display = "none");
@@ -417,6 +500,22 @@ var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 //#region src/module.ts
 Hooks.once("init", () => {
 	console.log(`${MODULE_ID} | init`);
+	game.settings?.register(MODULE_ID, "hpPath", {
+		name: "Caminho do HP",
+		hint: "Path do atributo de HP no sistema atual. Ex: system.attributes.hp.value",
+		scope: "world",
+		config: true,
+		type: String,
+		default: "system.attributes.hp.value"
+	});
+	game.settings?.register(MODULE_ID, "attackFlavor", {
+		name: "Texto de ataque no chat",
+		hint: "Palavra que identifica mensagens de ataque no chat. Ex: 'attacking' para Shadowdark, 'attack' para D&D 5e.",
+		scope: "world",
+		config: true,
+		type: String,
+		default: "attacking"
+	});
 });
 Hooks.once("ready", () => {
 	console.log(`${MODULE_ID} | ready`);

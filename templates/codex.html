@@ -22,12 +22,55 @@
       {{!-- Stats --}}
       <section class="codex-panel" data-panel="stats">
         <ul class="codex-stats">
-          <li>Dano causado <strong>{{this.record.stats.damageDealt}}</strong></li>
-          <li>Dano recebido <strong>{{this.record.stats.damageTaken}}</strong></li>
-          <li>Críticos <strong>{{this.record.stats.criticals}}</strong></li>
-          <li>Falhas críticas <strong>{{this.record.stats.criticalFails}}</strong></li>
-          <li>Abates <strong>{{this.record.stats.killCount}}</strong></li>
+          <li>
+            <span>Dano causado</span>
+            <div class="stat-value-group">
+              <strong class="stat-display">{{this.record.stats.damageDealt}}</strong>
+              <input class="stat-input" type="number" value="{{this.record.stats.damageDealt}}" style="display:none" min="0"/>
+              <button class="codex-btn-icon stat-edit" data-stat="damageDealt" data-actor-id="{{this.id}}" title="Editar">✎</button>
+            </div>
+          </li>
+          <li>
+            <span>Dano recebido</span>
+            <div class="stat-value-group">
+              <strong class="stat-display">{{this.record.stats.damageTaken}}</strong>
+              <input class="stat-input" type="number" value="{{this.record.stats.damageTaken}}" style="display:none" min="0"/>
+              <button class="codex-btn-icon stat-edit" data-stat="damageTaken" data-actor-id="{{this.id}}" title="Editar">✎</button>
+            </div>
+          </li>
+          <li>
+            <span>Críticos</span>
+            <div class="stat-value-group">
+              <strong class="stat-display">{{this.record.stats.criticals}}</strong>
+              <input class="stat-input" type="number" value="{{this.record.stats.criticals}}" style="display:none" min="0"/>
+              <button class="codex-btn-icon stat-edit" data-stat="criticals" data-actor-id="{{this.id}}" title="Editar">✎</button>
+            </div>
+          </li>
+          <li>
+            <span>Falhas críticas</span>
+            <div class="stat-value-group">
+              <strong class="stat-display">{{this.record.stats.criticalFails}}</strong>
+              <input class="stat-input" type="number" value="{{this.record.stats.criticalFails}}" style="display:none" min="0"/>
+              <button class="codex-btn-icon stat-edit" data-stat="criticalFails" data-actor-id="{{this.id}}" title="Editar">✎</button>
+            </div>
+          </li>
+          <li>
+            <span>Abates</span>
+            <div class="stat-value-group">
+              <strong class="stat-display">{{this.record.stats.killCount}}</strong>
+              <input class="stat-input" type="number" value="{{this.record.stats.killCount}}" style="display:none" min="0"/>
+              <button class="codex-btn-icon stat-edit" data-stat="killCount" data-actor-id="{{this.id}}" title="Editar">✎</button>
+            </div>
+          </li>
         </ul>
+
+        {{#if @root.isGM}}
+        <div class="codex-reset-area">
+          <button class="codex-btn codex-btn-danger" data-action="reset-stats" data-actor-id="{{this.id}}">
+            ↺ Resetar estatísticas
+          </button>
+        </div>
+        {{/if}}
       </section>
 
       {{!-- Diário --}}

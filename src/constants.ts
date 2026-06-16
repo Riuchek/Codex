@@ -7,6 +7,11 @@ export const DEFAULT_TAGS = [
   "lembrete",
 ] as const
 
+export function getNestedValue(obj: any, path: string): any {
+  return path.split(".").reduce((acc, key) => acc?.[key], obj)
+}
+
+
 export const EPITHET_RULES = [
   // Kill Count - npcs, pcs, monsters, etc.
   { threshold: 25,  label: "Cabeça quente",         stat: "killCount" },

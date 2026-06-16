@@ -448,3 +448,55 @@
   border-radius: 3px;
   opacity: 0.6;
 }
+
+
+.stat-value-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-input {
+  width: 70px;
+  background: rgba(139,105,20,0.12);
+  border: 1px solid var(--codex-gold);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  color: var(--codex-red);
+  text-align: right;
+  outline: none;
+}
+
+.stat-edit {
+  opacity: 0;
+  transition: opacity 0.2s;
+  font-style: normal;
+  font-size: 14px;
+}
+
+.codex-stats li:hover .stat-edit {
+  opacity: 1;
+}
+
+
+.codex-reset-area {
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(139,105,20,0.2);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.codex-btn-danger {
+  background: linear-gradient(135deg, #2c1010, #4a1a1a);
+  border-color: #8b1a1a;
+  color: #ffaaaa;
+  font-size: 10px;
+}
+
+.codex-btn-danger:hover {
+  background: linear-gradient(135deg, #4a1a1a, #6b2222);
+  box-shadow: 0 0 12px rgba(139,26,26,0.5);
+}

@@ -1,4 +1,4 @@
-import { MODULE_ID } from "../constants"
+import { MODULE_ID, getNestedValue } from "../constants"
 import { getRecord, updateStats } from "./ActorRecord"
 
 export function registerHooks() {
@@ -10,7 +10,8 @@ export function registerHooks() {
   
     const current = getRecord(actor)
     const flavor = (message as any).flavor?.toLowerCase() ?? ""
-    const isAttack = flavor.includes("attacking") || flavor.includes("attack")
+    const attackFlavor = (game.settings?.get(MODULE_ID as any, "attackFlavor" as any) as string ?? "attacking").toLowerCase()
+    const isAttack = flavor.includes(attackFlavor)
   
     if (isAttack) {
       const attackRoll = message.rolls?.[0]
@@ -65,10 +66,12 @@ export function registerHooks() {
   })
 
   Hooks.on("preUpdateActor", (actor: Actor, diff: any): void => {
-    const newHp = diff?.system?.attributes?.hp?.value
+    const hpPath = game.settings?.get(MODULE_ID as any, "hpPath" as any) as string ?? "system.attributes.hp.value"
+  
+    const newHp = getNestedValue(diff, hpPath)
     if (newHp === undefined) return
   
-    const oldHp = (actor as any).system?.attributes?.hp?.value
+    const oldHp = getNestedValue(actor, hpPath)
     if (oldHp === undefined) return
   
     const delta = oldHp - newHp
