@@ -1,27 +1,11 @@
 import { MODULE_ID } from "./constants"
 import { registerHooks } from "./data/hooks"
+import { registerSettings } from "./data/SettingsManager"
 import { CodexApp } from "./ui/CodexApp"
 
 Hooks.once("init", () => {
   console.log(`${MODULE_ID} | init`)
-
-  game.settings?.register(MODULE_ID as any, "hpPath" as any, {
-    name: "CODEX.SettingHpPath",
-    hint: "CODEX.SettingHpPathHint",
-    scope: "world",
-    config: true,
-    type: String,
-    default: "system.attributes.hp.value",
-  })
-  
-  game.settings?.register(MODULE_ID as any, "attackFlavor" as any, {
-    name: "CODEX.SettingAttackFlavor",
-    hint: "CODEX.SettingAttackFlavorHint",
-    scope: "world",
-    config: true,
-    type: String,
-    default: "attacking",
-  })
+  registerSettings()
 })
 
 Hooks.once("ready", () => {
@@ -32,7 +16,6 @@ Hooks.once("ready", () => {
 Hooks.on("renderSceneControls" as any, (_app: any, html: HTMLElement) => {
   const menu = html.querySelector("menu[data-application-part='layers']")
   if (!menu) return
-
   if (menu.querySelector("[data-control='codex']")) return
 
   const li = document.createElement("li")

@@ -1,95 +1,274 @@
 //#region src/constants.ts
 var MODULE_ID = "codex";
+var DEFAULT_RULES = [
+	{
+		id: "kc-25",
+		label: "Cabeça quente",
+		color: "#e8b84b",
+		icon: "⚔️",
+		scope: "global",
+		conditionMode: "all",
+		conditions: [{
+			stat: "killCount",
+			operator: ">=",
+			threshold: 25
+		}]
+	},
+	{
+		id: "kc-50",
+		label: "Assassino",
+		color: "#c9922a",
+		icon: "⚔️",
+		scope: "global",
+		conditionMode: "all",
+		conditions: [{
+			stat: "killCount",
+			operator: ">=",
+			threshold: 50
+		}]
+	},
+	{
+		id: "kc-75",
+		label: "Carniceiro",
+		color: "#8b1a1a",
+		icon: "💀",
+		scope: "global",
+		conditionMode: "all",
+		conditions: [{
+			stat: "killCount",
+			operator: ">=",
+			threshold: 75
+		}]
+	},
+	{
+		id: "kc-100",
+		label: "Sedento por sangue",
+		color: "#8b1a1a",
+		icon: "💀",
+		scope: "global",
+		conditionMode: "all",
+		conditions: [{
+			stat: "killCount",
+			operator: ">=",
+			threshold: 100
+		}]
+	},
+	{
+		id: "cr-10",
+		label: "Sortudo",
+		color: "#4a9e4a",
+		icon: "🍀",
+		scope: "global",
+		conditionMode: "all",
+		conditions: [{
+			stat: "criticals",
+			operator: ">=",
+			threshold: 10
+		}]
+	},
+	{
+		id: "cr-25",
+		label: "Abençoado pelo Caio",
+		color: "#4a9e4a",
+		icon: "✨",
+		scope: "global",
+		conditionMode: "all",
+		conditions: [{
+			stat: "criticals",
+			operator: ">=",
+			threshold: 25
+		}]
+	},
+	{
+		id: "cr-50",
+		label: "Roda da fortuna",
+		color: "#4a9e4a",
+		icon: "🎡",
+		scope: "global",
+		conditionMode: "all",
+		conditions: [{
+			stat: "criticals",
+			operator: ">=",
+			threshold: 50
+		}]
+	},
+	{
+		id: "cf-10",
+		label: "Aqui travou",
+		color: "#666",
+		icon: "💥",
+		scope: "global",
+		conditionMode: "all",
+		conditions: [{
+			stat: "criticalFails",
+			operator: ">=",
+			threshold: 10
+		}]
+	},
+	{
+		id: "cf-25",
+		label: "Fã do duo bigode",
+		color: "#666",
+		icon: "💥",
+		scope: "global",
+		conditionMode: "all",
+		conditions: [{
+			stat: "criticalFails",
+			operator: ">=",
+			threshold: 25
+		}]
+	},
+	{
+		id: "cf-50",
+		label: "Atomizado pelo dado",
+		color: "#666",
+		icon: "💥",
+		scope: "global",
+		conditionMode: "all",
+		conditions: [{
+			stat: "criticalFails",
+			operator: ">=",
+			threshold: 50
+		}]
+	},
+	{
+		id: "dt-75",
+		label: "Amigo da onça",
+		color: "#8b4513",
+		icon: "🐆",
+		scope: "global",
+		conditionMode: "all",
+		conditions: [{
+			stat: "damageTaken",
+			operator: ">=",
+			threshold: 75
+		}]
+	},
+	{
+		id: "dt-250",
+		label: "Amigo do dano",
+		color: "#8b4513",
+		icon: "🛡️",
+		scope: "global",
+		conditionMode: "all",
+		conditions: [{
+			stat: "damageTaken",
+			operator: ">=",
+			threshold: 250
+		}]
+	},
+	{
+		id: "dt-500",
+		label: "Amigo do roteiro",
+		color: "#8b4513",
+		icon: "📜",
+		scope: "global",
+		conditionMode: "all",
+		conditions: [{
+			stat: "damageTaken",
+			operator: ">=",
+			threshold: 500
+		}]
+	},
+	{
+		id: "dd-100",
+		label: "Bate forte",
+		color: "#c9922a",
+		icon: "💪",
+		scope: "global",
+		conditionMode: "all",
+		conditions: [{
+			stat: "damageDealt",
+			operator: ">=",
+			threshold: 100
+		}]
+	},
+	{
+		id: "dd-250",
+		label: "Lamina afiada",
+		color: "#c9922a",
+		icon: "🗡️",
+		scope: "global",
+		conditionMode: "all",
+		conditions: [{
+			stat: "damageDealt",
+			operator: ">=",
+			threshold: 250
+		}]
+	},
+	{
+		id: "dd-500",
+		label: "Vingador",
+		color: "#c9922a",
+		icon: "⚡",
+		scope: "global",
+		conditionMode: "all",
+		conditions: [{
+			stat: "damageDealt",
+			operator: ">=",
+			threshold: 500
+		}]
+	},
+	{
+		id: "dd-1000",
+		label: "O Catiço",
+		color: "#e8b84b",
+		icon: "👑",
+		scope: "global",
+		conditionMode: "all",
+		conditions: [{
+			stat: "damageDealt",
+			operator: ">=",
+			threshold: 1e3
+		}]
+	}
+];
 function getNestedValue(obj, path) {
 	return path.split(".").reduce((acc, key) => acc?.[key], obj);
 }
-var EPITHET_RULES = [
-	{
-		threshold: 25,
-		label: "Cabeça quente",
-		stat: "killCount"
-	},
-	{
-		threshold: 50,
-		label: "Assassino",
-		stat: "killCount"
-	},
-	{
-		threshold: 75,
-		label: "Carniceiro",
-		stat: "killCount"
-	},
-	{
-		threshold: 100,
-		label: "Sedento por sangue",
-		stat: "killCount"
-	},
-	{
-		threshold: 10,
-		label: "Sortudo",
-		stat: "criticals"
-	},
-	{
-		threshold: 25,
-		label: "Abençoado pelo Caio",
-		stat: "criticals"
-	},
-	{
-		threshold: 50,
-		label: "Roda da fortuna",
-		stat: "criticals"
-	},
-	{
-		threshold: 10,
-		label: "Aqui travou",
-		stat: "criticalFails"
-	},
-	{
-		threshold: 25,
-		label: "Fã do duo bigode",
-		stat: "criticalFails"
-	},
-	{
-		threshold: 50,
-		label: "Atomizado pelo dado",
-		stat: "criticalFails"
-	},
-	{
-		threshold: 75,
-		label: "Amigo da onça",
-		stat: "damageTaken"
-	},
-	{
-		threshold: 250,
-		label: "Amigo do dano",
-		stat: "damageTaken"
-	},
-	{
-		threshold: 500,
-		label: "Amigo do roteiro",
-		stat: "damageTaken"
-	},
-	{
-		threshold: 100,
-		label: "Bate forte",
-		stat: "damageDealt"
-	},
-	{
-		threshold: 250,
-		label: "Lamina afiada",
-		stat: "damageDealt"
-	},
-	{
-		threshold: 500,
-		label: "Vingador",
-		stat: "damageDealt"
-	},
-	{
-		threshold: 1e3,
-		label: "O Catiço",
-		stat: "damageDealt"
-	}
-];
+//#endregion
+//#region src/data/SettingsManager.ts
+var SETTINGS_KEY = "codexSettings";
+var DEFAULT_SETTINGS = {
+	hpPath: "system.attributes.hp.value",
+	attackFlavor: "attacking",
+	rules: DEFAULT_RULES
+};
+function registerSettings() {
+	game.settings?.register(MODULE_ID, SETTINGS_KEY, {
+		scope: "world",
+		config: false,
+		type: Object,
+		default: DEFAULT_SETTINGS
+	});
+}
+function getSettings() {
+	const saved = game.settings?.get(MODULE_ID, SETTINGS_KEY);
+	return {
+		...DEFAULT_SETTINGS,
+		...saved
+	};
+}
+async function saveSettings(patch) {
+	const current = getSettings();
+	await game.settings?.set(MODULE_ID, SETTINGS_KEY, {
+		...current,
+		...patch
+	});
+}
+function getRules(actorId) {
+	const { rules } = getSettings();
+	if (!actorId) return rules.filter((r) => r.scope === "global");
+	return rules.filter((r) => r.scope === "global" || r.scope === "actor" && r.actorId === actorId);
+}
+async function saveRule(rule) {
+	const { rules } = getSettings();
+	await saveSettings({ rules: rules.findIndex((r) => r.id === rule.id) >= 0 ? rules.map((r) => r.id === rule.id ? rule : r) : [...rules, rule] });
+}
+async function deleteRule(ruleId) {
+	const { rules } = getSettings();
+	await saveSettings({ rules: rules.filter((r) => r.id !== ruleId) });
+}
 //#endregion
 //#region src/data/ActorRecord.ts
 var updateQueue = /* @__PURE__ */ new Map();
@@ -135,10 +314,20 @@ async function updateStats(actor, patch) {
 			...current.stats,
 			...patch
 		};
-		const newEpithets = checkEpithetRules(updatedStats, current.epithets);
+		const newEpithets = checkEpithetRules(updatedStats, current.epithets, actor.id ?? "");
 		await actor.setFlag(MODULE_ID, "record", {
 			...current,
 			stats: updatedStats,
+			epithets: newEpithets
+		});
+	});
+}
+async function refreshEpithets(actor) {
+	return enqueue(actor, async () => {
+		const current = getRecord(actor);
+		const newEpithets = checkEpithetRules(current.stats, current.epithets, actor.id ?? "");
+		await actor.setFlag(MODULE_ID, "record", {
+			...current,
 			epithets: newEpithets
 		});
 	});
@@ -151,15 +340,36 @@ function enqueue(actor, fn) {
 	updateQueue.set(id, next);
 	return next;
 }
-function checkEpithetRules(stats, current) {
-	const manual = current.filter((e) => !e.auto);
+function evaluateCondition(stats, condition) {
+	const value = stats[condition.stat];
+	switch (condition.operator) {
+		case ">=": return value >= condition.threshold;
+		case "<=": return value <= condition.threshold;
+		case "==": return value === condition.threshold;
+		case ">": return value > condition.threshold;
+		case "<": return value < condition.threshold;
+		default: return false;
+	}
+}
+function evaluateRule(stats, rule) {
+	if (rule.conditions.length === 0) return false;
+	if (rule.conditionMode === "all") return rule.conditions.every((c) => evaluateCondition(stats, c));
+	return rule.conditions.some((c) => evaluateCondition(stats, c));
+}
+function checkEpithetRules(stats, current, actorId) {
+	const rules = getRules(actorId);
 	const auto = [];
-	for (const rule of EPITHET_RULES) if (stats[rule.stat] >= rule.threshold) auto.push({
+	for (const rule of rules) if (evaluateRule(stats, rule)) auto.push({
 		label: rule.label,
-		auto: true
+		color: rule.color,
+		icon: rule.icon,
+		auto: true,
+		ruleId: rule.id
 	});
-	const previous = new Set(current.filter((e) => e.auto).map((e) => e.label));
-	for (const epithet of auto) if (!previous.has(epithet.label)) ui.notifications?.info(`Codex | Nova alcunha desbloqueada: ${epithet.label}!`);
+	const autoLabels = new Set(auto.map((e) => e.label));
+	const manual = current.filter((e) => !e.auto && !autoLabels.has(e.label));
+	const previous = new Set(current.filter((e) => e.auto).map((e) => e.ruleId));
+	for (const epithet of auto) if (!previous.has(epithet.ruleId)) ui.notifications?.info(`Codex | ${game.i18n?.format("CODEX.NotifEpithet", { label: epithet.label })}`);
 	return [...manual, ...auto];
 }
 //#endregion
@@ -249,18 +459,33 @@ var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 	};
 	static PARTS = { main: { template: `modules/${MODULE_ID}/templates/codex.html` } };
 	async _prepareContext(_options) {
+		const settings = getSettings();
+		const globalRules = settings.rules.filter((r) => r.scope === "global");
 		return {
 			actors: (game.actors?.contents ?? []).filter((a) => a.hasPlayerOwner).sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")).map((a) => ({
 				id: a.id ?? "",
-				record: getRecord(a)
+				record: getRecord(a),
+				actorRules: settings.rules.filter((r) => r.scope === "actor" && r.actorId === a.id)
 			})),
-			isGM: game.user?.isGM ?? false
+			isGM: game.user?.isGM ?? false,
+			settings,
+			globalRules
 		};
 	}
 	async _onRender(context, options) {
 		await super._onRender(context, options);
 		const targetId = this._activeActorId || this.element.querySelector(".codex-actor-item")?.dataset.actorId || "";
 		this._selectActor(targetId);
+		this.element.querySelectorAll(".rule-label[data-color]").forEach((el) => {
+			const color = el.dataset.color;
+			if (color) el.style.color = color;
+		});
+		this.element.querySelectorAll(".epithet[data-color]").forEach((el) => {
+			const color = el.dataset.color;
+			if (!color) return;
+			el.style.color = color;
+			el.style.borderColor = color;
+		});
 		this.element.querySelectorAll("[data-action='reset-stats']").forEach((el) => {
 			el.addEventListener("click", async () => {
 				const actorId = el.dataset.actorId ?? "";
@@ -280,6 +505,44 @@ var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 					},
 					epithets: getRecord(actor).epithets.filter((e) => !e.auto)
 				});
+			});
+		});
+		this.element.querySelectorAll("[data-action='save-system-settings']").forEach((el) => {
+			el.addEventListener("click", async () => {
+				const settingsPanel = el.closest("[data-panel='settings']");
+				const hpPath = settingsPanel?.querySelector("[data-setting='hpPath']")?.value.trim() ?? "";
+				const attackFlavor = settingsPanel?.querySelector("[data-setting='attackFlavor']")?.value.trim() ?? "";
+				if (hpPath) await saveSettings({
+					hpPath,
+					attackFlavor
+				});
+				ui.notifications?.info("Codex | Settings saved.");
+			});
+		});
+		this.element.querySelectorAll("[data-action='new-global-rule'], [data-action='new-actor-rule']").forEach((el) => {
+			el.addEventListener("click", () => {
+				const actorId = el.dataset.actorId;
+				this._openRuleEditor(null, actorId || void 0);
+			});
+		});
+		this.element.querySelectorAll("[data-action='edit-rule']").forEach((el) => {
+			el.addEventListener("click", () => {
+				const ruleId = el.dataset.ruleId ?? "";
+				const rule = getSettings().rules.find((r) => r.id === ruleId) ?? null;
+				this._openRuleEditor(rule);
+			});
+		});
+		this.element.querySelectorAll("[data-action='delete-rule']").forEach((el) => {
+			el.addEventListener("click", async () => {
+				const ruleId = el.dataset.ruleId ?? "";
+				const rule = getSettings().rules.find((r) => r.id === ruleId);
+				if (!await foundry.applications.api.DialogV2.confirm({
+					window: { title: "Delete Rule" },
+					content: "<p>Delete this epithet rule? Characters who earned it will keep their epithet.</p>"
+				})) return;
+				await deleteRule(ruleId);
+				await this._refreshRuleActors(rule?.scope === "actor" ? rule.actorId : void 0);
+				this.render();
 			});
 		});
 		this.element.querySelectorAll(".codex-actor-item").forEach((el) => {
@@ -375,6 +638,142 @@ var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 	async _onClose(options) {
 		await super._onClose(options);
 		if (this._hookId !== -1) Hooks.off("updateActor", this._hookId);
+	}
+	async _openRuleEditor(rule, actorId) {
+		const isNew = !rule;
+		const current = rule ?? {
+			id: foundry.utils.randomID(),
+			label: "",
+			color: "#c9922a",
+			icon: "⚔️",
+			scope: actorId ? "actor" : "global",
+			actorId,
+			conditionMode: "all",
+			conditions: [{
+				stat: "killCount",
+				operator: ">=",
+				threshold: 1
+			}]
+		};
+		const conditionHTML = (c, i) => `
+      <div class="rule-condition-row" data-index="${i}">
+        <select class="cond-stat" data-index="${i}">
+          ${[
+			"killCount",
+			"criticals",
+			"criticalFails",
+			"damageDealt",
+			"damageTaken"
+		].map((s) => `<option value="${s}" ${c.stat === s ? "selected" : ""}>${s}</option>`).join("")}
+        </select>
+        <select class="cond-op" data-index="${i}">
+          ${[
+			">=",
+			"<=",
+			"==",
+			">",
+			"<"
+		].map((op) => `<option value="${op}" ${c.operator === op ? "selected" : ""}>${op}</option>`).join("")}
+        </select>
+        <input class="cond-threshold codex-input" type="number" min="0" step="1" value="${c.threshold}" data-index="${i}"/>
+        <button class="codex-btn-icon remove-condition" type="button" data-index="${i}">🗑️</button>
+      </div>
+    `;
+		const onRuleEditorClick = (event) => {
+			if (!(event.target instanceof HTMLElement)) return;
+			const addButton = event.target.closest("#add-condition");
+			if (addButton) {
+				event.preventDefault();
+				event.stopPropagation();
+				const conditions = addButton.closest(".codex-rule-editor")?.querySelector("#rule-conditions");
+				const index = conditions?.querySelectorAll(".rule-condition-row").length ?? 0;
+				conditions?.insertAdjacentHTML("beforeend", conditionHTML({
+					stat: "killCount",
+					operator: ">=",
+					threshold: 1
+				}, index));
+				return;
+			}
+			const removeButton = event.target.closest(".remove-condition");
+			if (removeButton) {
+				event.preventDefault();
+				event.stopPropagation();
+				removeButton.closest(".rule-condition-row")?.remove();
+			}
+		};
+		const conditionsHTML = current.conditions.map(conditionHTML).join("");
+		document.addEventListener("click", onRuleEditorClick, true);
+		let result = null;
+		try {
+			result = await foundry.applications.api.DialogV2.prompt({
+				window: { title: isNew ? "New Epithet Rule" : "Edit Epithet Rule" },
+				content: `
+          <div class="codex-rule-editor">
+            <div class="rule-main-row">
+              <input id="rule-icon"  type="text"  value="${current.icon}" placeholder="⚔️"/>
+              <input id="rule-label" type="text"  value="${current.label}" placeholder="Epithet name"/>
+              <input id="rule-color" type="color" value="${current.color}"/>
+            </div>
+            <div class="rule-mode-row">
+              <label>Conditions match:</label>
+              <select id="rule-mode">
+                <option value="all" ${current.conditionMode === "all" ? "selected" : ""}>ALL (AND)</option>
+                <option value="any" ${current.conditionMode === "any" ? "selected" : ""}>ANY (OR)</option>
+              </select>
+            </div>
+            <div id="rule-conditions">${conditionsHTML}</div>
+            <button id="add-condition" class="codex-btn" type="button">+ Add Condition</button>
+          </div>
+        `,
+				ok: {
+					label: "Save",
+					callback: (_event, _btn, dialog) => {
+						const el = dialog.element;
+						const label = el.querySelector("#rule-label").value.trim();
+						const color = el.querySelector("#rule-color").value;
+						const icon = el.querySelector("#rule-icon").value.trim();
+						const conditionMode = el.querySelector("#rule-mode").value;
+						const conditions = [];
+						el.querySelectorAll(".rule-condition-row").forEach((row) => {
+							const stat = row.querySelector(".cond-stat").value;
+							const operator = row.querySelector(".cond-op").value;
+							const threshold = parseInt(row.querySelector(".cond-threshold").value) || 0;
+							conditions.push({
+								stat,
+								operator,
+								threshold
+							});
+						});
+						return {
+							label,
+							color,
+							icon,
+							conditionMode,
+							conditions
+						};
+					}
+				}
+			});
+		} finally {
+			document.removeEventListener("click", onRuleEditorClick, true);
+		}
+		if (!result?.label) return;
+		const savedRule = {
+			...current,
+			...result
+		};
+		await saveRule(savedRule);
+		await this._refreshRuleActors(savedRule.scope === "actor" ? savedRule.actorId : void 0);
+		this.render();
+	}
+	async _refreshRuleActors(actorId) {
+		if (actorId) {
+			const actor = game.actors?.get(actorId);
+			if (actor) await refreshEpithets(actor);
+			return;
+		}
+		const actors = (game.actors?.contents ?? []).filter((actor) => actor.hasPlayerOwner);
+		await Promise.all(actors.map((actor) => refreshEpithets(actor)));
 	}
 	_selectActor(actorId, tab) {
 		this._activeActorId = actorId;
@@ -500,22 +899,7 @@ var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 //#region src/module.ts
 Hooks.once("init", () => {
 	console.log(`${MODULE_ID} | init`);
-	game.settings?.register(MODULE_ID, "hpPath", {
-		name: "CODEX.SettingHpPath",
-		hint: "CODEX.SettingHpPathHint",
-		scope: "world",
-		config: true,
-		type: String,
-		default: "system.attributes.hp.value"
-	});
-	game.settings?.register(MODULE_ID, "attackFlavor", {
-		name: "CODEX.SettingAttackFlavor",
-		hint: "CODEX.SettingAttackFlavorHint",
-		scope: "world",
-		config: true,
-		type: String,
-		default: "attacking"
-	});
+	registerSettings();
 });
 Hooks.once("ready", () => {
 	console.log(`${MODULE_ID} | ready`);
