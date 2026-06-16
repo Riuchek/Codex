@@ -6,17 +6,17 @@ Hooks.once("init", () => {
   console.log(`${MODULE_ID} | init`)
 
   game.settings?.register(MODULE_ID as any, "hpPath" as any, {
-    name: "Caminho do HP",
-    hint: "Path do atributo de HP no sistema atual. Ex: system.attributes.hp.value",
+    name: "CODEX.SettingHpPath",
+    hint: "CODEX.SettingHpPathHint",
     scope: "world",
     config: true,
     type: String,
     default: "system.attributes.hp.value",
   })
-
+  
   game.settings?.register(MODULE_ID as any, "attackFlavor" as any, {
-    name: "Texto de ataque no chat",
-    hint: "Palavra que identifica mensagens de ataque no chat. Ex: 'attacking' para Shadowdark, 'attack' para D&D 5e.",
+    name: "CODEX.SettingAttackFlavor",
+    hint: "CODEX.SettingAttackFlavorHint",
     scope: "world",
     config: true,
     type: String,

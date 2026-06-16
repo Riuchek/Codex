@@ -1,0 +1,40 @@
+{
+    "CODEX.TabStats": "Estatísticas",
+    "CODEX.TabJournal": "Diário",
+    "CODEX.TabEpithets": "Alcunhas",
+  
+    "CODEX.StatDamageDealt": "Dano causado",
+    "CODEX.StatDamageTaken": "Dano recebido",
+    "CODEX.StatCriticals": "Críticos",
+    "CODEX.StatCriticalFails": "Falhas críticas",
+    "CODEX.StatKillCount": "Abates",
+  
+    "CODEX.ResetStats": "↺ Resetar estatísticas",
+    "CODEX.ResetConfirmTitle": "Resetar estatísticas",
+    "CODEX.ResetConfirmContent": "Tem certeza? Todas as estatísticas de <strong>{name}</strong> serão zeradas. Alcunhas automáticas também serão removidas.",
+  
+    "CODEX.NewEntry": "+ Nova entrada",
+    "CODEX.NewEntryTitle": "Nova entrada no diário",
+    "CODEX.EntryTitlePlaceholder": "Título (ex: Sessão 3, Dia do Eclipse...)",
+    "CODEX.EntryContentPlaceholder": "O que aconteceu...",
+    "CODEX.EntryTagsLabel": "Tags (separadas por vírgula)",
+    "CODEX.EntryTagsPlaceholder": "combate, npc, segredo...",
+    "CODEX.EntrySave": "Salvar",
+    "CODEX.EntryNoTitle": "Sem título",
+    "CODEX.EntryEmpty": "Nenhuma entrada ainda.",
+    "CODEX.EditEntryTitle": "Editar entrada",
+    "CODEX.DeleteEntryTitle": "Deletar entrada",
+    "CODEX.DeleteEntryContent": "<p>Tem certeza? Esta entrada será apagada permanentemente.</p>",
+  
+    "CODEX.EpithetPlaceholder": "Nova alcunha...",
+    "CODEX.EpithetAdd": "Adicionar",
+    "CODEX.EpithetEmpty": "Nenhuma alcunha ainda.",
+  
+    "CODEX.NotifCritical": "{name} acertou um crítico!",
+    "CODEX.NotifEpithet": "Nova alcunha desbloqueada: {label}!",
+  
+    "CODEX.SettingHpPath": "Caminho do HP",
+    "CODEX.SettingHpPathHint": "Path do atributo de HP no sistema atual. Ex: system.attributes.hp.value",
+    "CODEX.SettingAttackFlavor": "Texto de ataque no chat",
+    "CODEX.SettingAttackFlavorHint": "Palavra que identifica mensagens de ataque no chat. Ex: 'attacking' para Shadowdark, 'attack' para D&D 5e."
+  }

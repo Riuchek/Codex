@@ -14,16 +14,16 @@
     <div class="codex-detail" data-detail="{{this.id}}" style="display:none">
 
       <nav class="codex-tabs">
-        <a class="codex-tab active" data-tab="stats">Estatísticas</a>
-        <a class="codex-tab" data-tab="journal">Diário</a>
-        <a class="codex-tab" data-tab="epithets">Alcunhas</a>
+        <a class="codex-tab active" data-tab="stats">{{localize "CODEX.TabStats"}}</a>
+        <a class="codex-tab" data-tab="journal">{{localize "CODEX.TabJournal"}}</a>
+        <a class="codex-tab" data-tab="epithets">{{localize "CODEX.TabEpithets"}}</a>
       </nav>
 
       {{!-- Stats --}}
       <section class="codex-panel" data-panel="stats">
         <ul class="codex-stats">
           <li>
-            <span>Dano causado</span>
+            <span>{{localize "CODEX.StatDamageDealt"}}</span>
             <div class="stat-value-group">
               <strong class="stat-display">{{this.record.stats.damageDealt}}</strong>
               <input class="stat-input" type="number" value="{{this.record.stats.damageDealt}}" style="display:none" min="0"/>
@@ -31,7 +31,7 @@
             </div>
           </li>
           <li>
-            <span>Dano recebido</span>
+            <span>{{localize "CODEX.StatDamageTaken"}}</span>
             <div class="stat-value-group">
               <strong class="stat-display">{{this.record.stats.damageTaken}}</strong>
               <input class="stat-input" type="number" value="{{this.record.stats.damageTaken}}" style="display:none" min="0"/>
@@ -39,7 +39,7 @@
             </div>
           </li>
           <li>
-            <span>Críticos</span>
+            <span>{{localize "CODEX.StatCriticals"}}</span>
             <div class="stat-value-group">
               <strong class="stat-display">{{this.record.stats.criticals}}</strong>
               <input class="stat-input" type="number" value="{{this.record.stats.criticals}}" style="display:none" min="0"/>
@@ -47,7 +47,7 @@
             </div>
           </li>
           <li>
-            <span>Falhas críticas</span>
+            <span>{{localize "CODEX.StatCriticalFails"}}</span>
             <div class="stat-value-group">
               <strong class="stat-display">{{this.record.stats.criticalFails}}</strong>
               <input class="stat-input" type="number" value="{{this.record.stats.criticalFails}}" style="display:none" min="0"/>
@@ -55,7 +55,7 @@
             </div>
           </li>
           <li>
-            <span>Abates</span>
+            <span>{{localize "CODEX.StatKillCount"}}</span>
             <div class="stat-value-group">
               <strong class="stat-display">{{this.record.stats.killCount}}</strong>
               <input class="stat-input" type="number" value="{{this.record.stats.killCount}}" style="display:none" min="0"/>
@@ -67,7 +67,7 @@
         {{#if @root.isGM}}
         <div class="codex-reset-area">
           <button class="codex-btn codex-btn-danger" data-action="reset-stats" data-actor-id="{{this.id}}">
-            ↺ Resetar estatísticas
+            ↺ {{localize "CODEX.ResetStats"}}
           </button>
         </div>
         {{/if}}
@@ -77,7 +77,7 @@
       <section class="codex-panel" data-panel="journal" style="display:none">
         <div class="codex-journal-header">
           <button class="codex-btn" data-action="new-entry" data-actor-id="{{this.id}}">
-            + Nova entrada
+            + {{localize "CODEX.NewEntry"}}
           </button>
         </div>
         <div class="codex-entries">
@@ -98,7 +98,7 @@
             </div>
           </div>
           {{else}}
-          <p class="codex-empty">Nenhuma entrada ainda.</p>
+          <p class="codex-empty">{{localize "CODEX.EntryEmpty"}}</p>
           {{/each}}
         </div>
       </section>
@@ -106,8 +106,8 @@
       {{!-- Alcunhas --}}
       <section class="codex-panel" data-panel="epithets" style="display:none">
         <div class="codex-epithets-header">
-          <input class="codex-input" type="text" placeholder="Nova alcunha..." data-actor-id="{{this.id}}" />
-          <button class="codex-btn" data-action="add-epithet" data-actor-id="{{this.id}}">Adicionar</button>
+          <input class="codex-input" type="text" placeholder="{{localize "CODEX.EpithetPlaceholder"}}" data-actor-id="{{this.id}}" />
+          <button class="codex-btn" data-action="add-epithet" data-actor-id="{{this.id}}">{{localize "CODEX.EpithetAdd"}}</button>
         </div>
         <div class="codex-epithets-list">
           {{#each this.record.epithets}}
@@ -120,7 +120,7 @@
             {{/unless}}
           </div>
           {{else}}
-          <p class="codex-empty">Nenhuma alcunha ainda.</p>
+          <p class="codex-empty">{{localize "CODEX.EpithetEmpty"}}</p>
           {{/each}}
         </div>
       </section>

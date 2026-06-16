@@ -184,7 +184,7 @@ function registerHooks() {
 				criticalFails: current.stats.criticalFails + (isCriticalFail ? 1 : 0),
 				damageDealt: current.stats.damageDealt + damageDealt
 			});
-			if (isCritical) ui.notifications?.info(`Codex | ${actor.name} acertou um crítico!`);
+			if (isCritical) ui.notifications?.info(`Codex | ${game.i18n?.format("CODEX.NotifCritical", { name: actor.name })}`);
 			return;
 		}
 		const roll = message.rolls?.[0];
@@ -197,7 +197,7 @@ function registerHooks() {
 			criticals: current.stats.criticals + (isCritical ? 1 : 0),
 			criticalFails: current.stats.criticalFails + (isCritFail ? 1 : 0)
 		});
-		if (isCritical) ui.notifications?.info(`Codex | ${actor.name} acertou um crítico!`);
+		if (isCritical) ui.notifications?.info(`Codex | ${game.i18n?.format("CODEX.NotifCritical", { name: actor.name })}`);
 	});
 	Hooks.on("updateActor", async (actor, diff) => {
 		if (!diff.name && !diff.img) return;
@@ -250,7 +250,7 @@ var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 	static PARTS = { main: { template: `modules/${MODULE_ID}/templates/codex.html` } };
 	async _prepareContext(_options) {
 		return {
-			actors: (game.actors?.contents ?? []).filter((a) => a.hasPlayerOwner).map((a) => ({
+			actors: (game.actors?.contents ?? []).filter((a) => a.hasPlayerOwner).sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")).map((a) => ({
 				id: a.id ?? "",
 				record: getRecord(a)
 			})),
@@ -267,8 +267,8 @@ var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 				const actor = game.actors?.get(actorId);
 				if (!actor) return;
 				if (!await foundry.applications.api.DialogV2.confirm({
-					window: { title: "Resetar estatísticas" },
-					content: `<p>Tem certeza? Todas as estatísticas de <strong>${actor.name}</strong> serão zeradas. Alcunhas automáticas também serão removidas.</p>`
+					window: { title: game.i18n?.localize("CODEX.ResetConfirmTitle") },
+					content: game.i18n?.format("CODEX.ResetConfirmContent", { name: actor.name })
 				})) return;
 				await updateRecord(actor, {
 					stats: {
@@ -399,19 +399,19 @@ var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 		const actor = game.actors?.get(actorId);
 		if (!actor) return;
 		const result = await foundry.applications.api.DialogV2.prompt({
-			window: { title: "Nova entrada no diário" },
+			window: { title: game.i18n?.localize("CODEX.NewEntryTitle") },
 			content: `
         <div style="display:flex;flex-direction:column;gap:8px;padding:8px">
-          <input id="entry-title" type="text" placeholder="Título (ex: Sessão 3, Dia do Eclipse...)" style="width:100%"/>
-          <textarea id="entry-content" rows="6" placeholder="O que aconteceu..." style="width:100%;resize:vertical"></textarea>
+          <input id="entry-title" type="text" placeholder="${game.i18n?.localize("CODEX.EntryTitlePlaceholder")}" style="width:100%"/>
+          <textarea id="entry-content" rows="6" placeholder="${game.i18n?.localize("CODEX.EntryContentPlaceholder")}" style="width:100%;resize:vertical"></textarea>
           <div>
-            <label style="font-size:12px;color:#aaa">Tags (separadas por vírgula)</label>
-            <input id="entry-tags" type="text" placeholder="combate, npc, segredo..." style="width:100%"/>
+            <label style="font-size:12px;color:#aaa">${game.i18n?.localize("CODEX.EntryTagsLabel")}</label>
+            <input id="entry-tags" type="text" placeholder="${game.i18n?.localize("CODEX.EntryTagsPlaceholder")}" style="width:100%"/>
           </div>
         </div>
       `,
 			ok: {
-				label: "Salvar",
+				label: game.i18n?.localize("CODEX.EntrySave"),
 				callback: (_event, _btn, dialog) => {
 					const el = dialog.element;
 					return {
@@ -426,7 +426,7 @@ var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 		const record = getRecord(actor);
 		const entry = {
 			id: foundry.utils.randomID(),
-			title: result.title || "Sem título",
+			title: result.title ?? game.i18n?.localize("CODEX.EntryNoTitle") ?? "",
 			content: result.content,
 			createdAt: Date.now(),
 			tags: result.tags
@@ -472,8 +472,8 @@ var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 		const actor = game.actors?.get(actorId);
 		if (!actor) return;
 		if (!await foundry.applications.api.DialogV2.confirm({
-			window: { title: "Deletar entrada" },
-			content: "<p>Tem certeza? Esta entrada será apagada permanentemente.</p>"
+			window: { title: game.i18n?.localize("CODEX.DeleteEntryTitle") },
+			content: game.i18n?.format("CODEX.DeleteEntryContent", { name: actor.name })
 		})) return;
 		await updateRecord(actor, { journal: getRecord(actor).journal.filter((e) => e.id !== entryId) });
 		this.render();
@@ -501,16 +501,16 @@ var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 Hooks.once("init", () => {
 	console.log(`${MODULE_ID} | init`);
 	game.settings?.register(MODULE_ID, "hpPath", {
-		name: "Caminho do HP",
-		hint: "Path do atributo de HP no sistema atual. Ex: system.attributes.hp.value",
+		name: "CODEX.SettingHpPath",
+		hint: "CODEX.SettingHpPathHint",
 		scope: "world",
 		config: true,
 		type: String,
 		default: "system.attributes.hp.value"
 	});
 	game.settings?.register(MODULE_ID, "attackFlavor", {
-		name: "Texto de ataque no chat",
-		hint: "Palavra que identifica mensagens de ataque no chat. Ex: 'attacking' para Shadowdark, 'attack' para D&D 5e.",
+		name: "CODEX.SettingAttackFlavor",
+		hint: "CODEX.SettingAttackFlavorHint",
 		scope: "world",
 		config: true,
 		type: String,

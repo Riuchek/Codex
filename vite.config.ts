@@ -20,6 +20,8 @@ export default defineConfig({
         { src: "module.json",          dest: ".",         rename: { stripBase: 1 } },
         { src: "styles/codex.css",     dest: "styles",    rename: { stripBase: 1 } },
         { src: "templates/codex.html", dest: "templates", rename: { stripBase: 1 } },
+        { src: "lang/en.json",    dest: "lang", rename: { stripBase: 1 } },
+        { src: "lang/pt-BR.json", dest: "lang", rename: { stripBase: 1 } }
       ]
     })
   ]
