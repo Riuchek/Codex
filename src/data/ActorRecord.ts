@@ -1,7 +1,7 @@
-import { MODULE_ID, EPITHET_RULES } from "../constants"
-import type { ActorRecord, Epithet } from "../types"
+import { MODULE_ID } from "../constants"
+import { getRules } from "./SettingsManager"
+import type { ActorRecord, Epithet, EpithetRule, Condition, StatKey } from "../types"
 
-// fila por ator — garante que updates sejam sequenciais
 const updateQueue: Map<string, Promise<void>> = new Map()
 
 const EMPTY_RECORD = (): ActorRecord => ({
@@ -51,11 +51,23 @@ export async function updateStats(
   return enqueue(actor, async () => {
     const current = getRecord(actor)
     const updatedStats = { ...current.stats, ...patch }
-    const newEpithets = checkEpithetRules(updatedStats, current.epithets)
+    const newEpithets = checkEpithetRules(updatedStats, current.epithets, actor.id ?? "")
 
     await actor.setFlag(MODULE_ID as any, "record", {
       ...current,
       stats: updatedStats,
+      epithets: newEpithets,
+    })
+  })
+}
+
+export async function refreshEpithets(actor: Actor): Promise<void> {
+  return enqueue(actor, async () => {
+    const current = getRecord(actor)
+    const newEpithets = checkEpithetRules(current.stats, current.epithets, actor.id ?? "")
+
+    await actor.setFlag(MODULE_ID as any, "record", {
+      ...current,
       epithets: newEpithets,
     })
   })
@@ -71,24 +83,53 @@ function enqueue(actor: Actor, fn: () => Promise<void>): Promise<void> {
   return next
 }
 
+function evaluateCondition(stats: ActorRecord["stats"], condition: Condition): boolean {
+  const value = stats[condition.stat as StatKey]
+  switch (condition.operator) {
+    case ">=": return value >= condition.threshold
+    case "<=": return value <= condition.threshold
+    case "==": return value === condition.threshold
+    case ">":  return value >  condition.threshold
+    case "<":  return value <  condition.threshold
+    default:   return false
+  }
+}
+
+function evaluateRule(stats: ActorRecord["stats"], rule: EpithetRule): boolean {
+  if (rule.conditions.length === 0) return false
+  if (rule.conditionMode === "all") {
+    return rule.conditions.every(c => evaluateCondition(stats, c))
+  }
+  return rule.conditions.some(c => evaluateCondition(stats, c))
+}
+
 function checkEpithetRules(
   stats: ActorRecord["stats"],
-  current: Epithet[]
+  current: Epithet[],
+  actorId: string
 ): Epithet[] {
-  const manual = current.filter(e => !e.auto)
+  const rules = getRules(actorId)
 
   const auto: Epithet[] = []
-  for (const rule of EPITHET_RULES) {
-    const value = stats[rule.stat as keyof ActorRecord["stats"]]
-    if (value >= rule.threshold) {
-      auto.push({ label: rule.label, auto: true })
+  for (const rule of rules) {
+    if (evaluateRule(stats, rule)) {
+      auto.push({
+        label:  rule.label,
+        color:  rule.color,
+        icon:   rule.icon,
+        auto:   true,
+        ruleId: rule.id,
+      })
     }
   }
 
-  const previous = new Set(current.filter(e => e.auto).map(e => e.label))
+  const autoLabels = new Set(auto.map(e => e.label))
+  const manual = current.filter(e => !e.auto && !autoLabels.has(e.label))
+
+  const previous = new Set(current.filter(e => e.auto).map(e => e.ruleId))
   for (const epithet of auto) {
-    if (!previous.has(epithet.label)) {
-      ui.notifications?.info(`Codex | Nova alcunha desbloqueada: ${epithet.label}!`)
+    if (!previous.has(epithet.ruleId)) {
+      ui.notifications?.info(`Codex | ${game.i18n?.format("CODEX.NotifEpithet", { label: epithet.label })}`)
     }
   }
 

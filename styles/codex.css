@@ -481,6 +481,169 @@
 }
 
 
+/* ── Settings ─────────────────────────────────────────────────── */
+.codex-settings-panel {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.settings-group {
+  margin-bottom: 20px;
+  border: 1px solid rgba(139,105,20,0.2);
+  border-radius: 4px;
+  padding: 12px 16px;
+}
+
+.settings-group-title {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--codex-red);
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-family: 'EB Garamond', serif;
+  font-size: 14px;
+  color: var(--codex-ink);
+}
+
+.settings-row label {
+  min-width: 140px;
+  color: var(--codex-ink-light);
+}
+
+.settings-rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-rule-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(139,105,20,0.05);
+  border: 1px solid rgba(139,105,20,0.15);
+  border-radius: 3px;
+  font-family: 'EB Garamond', serif;
+  font-size: 13px;
+}
+
+.rule-icon { font-size: 16px; }
+
+.rule-label {
+  font-weight: 600;
+  min-width: 120px;
+}
+
+.rule-conditions {
+  flex: 1;
+  color: var(--codex-ink-light);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.rule-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.settings-rule-row:hover .rule-actions { opacity: 1; }
+
+.rule-condition-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.codex-rule-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px;
+}
+
+.codex-rule-editor .rule-main-row,
+.codex-rule-editor .rule-mode-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.codex-rule-editor input,
+.codex-rule-editor select {
+  background: rgba(244,228,193,0.12);
+  border: 1px solid rgba(201,146,42,0.35);
+  border-radius: 3px;
+  color: var(--codex-parchment);
+  min-height: 32px;
+}
+
+.codex-rule-editor input:focus,
+.codex-rule-editor select:focus {
+  border-color: var(--codex-gold);
+  box-shadow: 0 0 8px rgba(201,146,42,0.3);
+  outline: none;
+}
+
+.codex-rule-editor input::placeholder {
+  color: rgba(244,228,193,0.65);
+}
+
+.codex-rule-editor #rule-icon {
+  flex: 0 0 50px;
+  text-align: center;
+}
+
+.codex-rule-editor #rule-label,
+.codex-rule-editor #rule-mode {
+  flex: 1;
+  min-width: 0;
+}
+
+.codex-rule-editor #rule-color {
+  flex: 0 0 44px;
+  height: 32px;
+  padding: 3px;
+}
+
+.codex-rule-editor .rule-mode-row label {
+  color: var(--codex-parchment);
+  font-size: 12px;
+  line-height: 1.1;
+  width: 70px;
+}
+
+.codex-rule-editor .rule-condition-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.codex-rule-editor .cond-threshold {
+  flex: 0 0 96px;
+  width: 96px;
+  color: var(--codex-parchment);
+}
+
+.codex-rule-editor #add-condition {
+  align-self: flex-start;
+}
+
+
 .codex-reset-area {
   margin-top: 20px;
   padding-top: 12px;

@@ -1,6 +1,7 @@
 import { MODULE_ID } from "../constants"
-import { getRecord, updateRecord, updateStats } from "../data/ActorRecord"
-import type { ActorRecord, JournalEntry, Epithet } from "../types"
+import { getRecord, refreshEpithets, updateRecord, updateStats } from "../data/ActorRecord"
+import { getSettings, saveSettings, saveRule, deleteRule } from "../data/SettingsManager"
+import type { JournalEntry, EpithetRule, Condition } from "../types"
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
@@ -22,12 +23,19 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   override async _prepareContext(_options?: object): Promise<any> {
+    const settings = getSettings()
+    const globalRules = settings.rules.filter((r: EpithetRule) => r.scope === "global")
+  
     const actors = (game.actors?.contents ?? [])
       .filter(a => a.hasPlayerOwner)
       .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""))
-      .map(a => ({ id: a.id ?? "", record: getRecord(a) }))
+      .map(a => ({
+        id: a.id ?? "",
+        record: getRecord(a),
+        actorRules: settings.rules.filter((r: EpithetRule) => r.scope === "actor" && r.actorId === a.id)
+      }))
   
-    return { actors, isGM: game.user?.isGM ?? false }
+    return { actors, isGM: game.user?.isGM ?? false, settings, globalRules }
   }
 
   override async _onRender(context: object, options: object): Promise<void> {
@@ -36,6 +44,18 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const targetId = this._activeActorId ||
       (this.element.querySelector(".codex-actor-item") as HTMLElement)?.dataset.actorId || ""
     this._selectActor(targetId)
+
+    this.element.querySelectorAll<HTMLElement>(".rule-label[data-color]").forEach(el => {
+      const color = el.dataset.color
+      if (color) el.style.color = color
+    })
+
+    this.element.querySelectorAll<HTMLElement>(".epithet[data-color]").forEach(el => {
+      const color = el.dataset.color
+      if (!color) return
+      el.style.color = color
+      el.style.borderColor = color
+    })
   
 
 
@@ -63,6 +83,52 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
           },
           epithets: record.epithets.filter(e => !e.auto)
         })
+      })
+    })
+
+
+        
+    this.element.querySelectorAll("[data-action='save-system-settings']").forEach(el => {
+      el.addEventListener("click", async () => {
+        const settingsPanel = (el as HTMLElement).closest("[data-panel='settings']") as HTMLElement | null
+        const hpPath = settingsPanel?.querySelector<HTMLInputElement>("[data-setting='hpPath']")?.value.trim() ?? ""
+        const attackFlavor = settingsPanel?.querySelector<HTMLInputElement>("[data-setting='attackFlavor']")?.value.trim() ?? ""
+        if (hpPath) await saveSettings({ hpPath, attackFlavor })
+        ui.notifications?.info("Codex | Settings saved.")
+      })
+    })
+
+    
+    this.element.querySelectorAll("[data-action='new-global-rule'], [data-action='new-actor-rule']").forEach(el => {
+      el.addEventListener("click", () => {
+        const actorId = (el as HTMLElement).dataset.actorId
+        void this._openRuleEditor(null, actorId || undefined)
+      })
+    })
+
+   
+    this.element.querySelectorAll("[data-action='edit-rule']").forEach(el => {
+      el.addEventListener("click", () => {
+        const ruleId = (el as HTMLElement).dataset.ruleId ?? ""
+        const settings = getSettings()
+        const rule = settings.rules.find(r => r.id === ruleId) ?? null
+        void this._openRuleEditor(rule)
+      })
+    })
+
+    this.element.querySelectorAll("[data-action='delete-rule']").forEach(el => {
+      el.addEventListener("click", async () => {
+        const ruleId = (el as HTMLElement).dataset.ruleId ?? ""
+        const settings = getSettings()
+        const rule = settings.rules.find(r => r.id === ruleId)
+        const confirmed = await foundry.applications.api.DialogV2.confirm({
+          window: { title: "Delete Rule" },
+          content: "<p>Delete this epithet rule? Characters who earned it will keep their epithet.</p>",
+        })
+        if (!confirmed) return
+        await deleteRule(ruleId)
+        await this._refreshRuleActors(rule?.scope === "actor" ? rule.actorId : undefined)
+        void this.render()
       })
     })
 
@@ -174,6 +240,133 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
     await super._onClose(options)
     if (this._hookId !== -1) Hooks.off("updateActor" as any, this._hookId)
   }
+
+  private async _openRuleEditor(rule: EpithetRule | null, actorId?: string): Promise<void> {
+    const isNew = !rule
+    const current: EpithetRule = rule ?? {
+      id: foundry.utils.randomID(),
+      label: "",
+      color: "#c9922a",
+      icon: "⚔️",
+      scope: actorId ? "actor" : "global",
+      actorId,
+      conditionMode: "all",
+      conditions: [{ stat: "killCount", operator: ">=", threshold: 1 }],
+    }
+  
+    const conditionHTML = (c: Condition, i: number) => `
+      <div class="rule-condition-row" data-index="${i}">
+        <select class="cond-stat" data-index="${i}">
+          ${["killCount","criticals","criticalFails","damageDealt","damageTaken"].map(s =>
+            `<option value="${s}" ${c.stat === s ? "selected" : ""}>${s}</option>`
+          ).join("")}
+        </select>
+        <select class="cond-op" data-index="${i}">
+          ${[">=","<=","==",">","<"].map(op =>
+            `<option value="${op}" ${c.operator === op ? "selected" : ""}>${op}</option>`
+          ).join("")}
+        </select>
+        <input class="cond-threshold codex-input" type="number" min="0" step="1" value="${c.threshold}" data-index="${i}"/>
+        <button class="codex-btn-icon remove-condition" type="button" data-index="${i}">🗑️</button>
+      </div>
+    `
+
+    const onRuleEditorClick = (event: MouseEvent) => {
+      if (!(event.target instanceof HTMLElement)) return
+
+      const addButton = event.target.closest("#add-condition")
+      if (addButton) {
+        event.preventDefault()
+        event.stopPropagation()
+        const editor = addButton.closest(".codex-rule-editor")
+        const conditions = editor?.querySelector("#rule-conditions")
+        const index = conditions?.querySelectorAll(".rule-condition-row").length ?? 0
+        conditions?.insertAdjacentHTML("beforeend", conditionHTML({
+          stat: "killCount",
+          operator: ">=",
+          threshold: 1
+        }, index))
+        return
+      }
+
+      const removeButton = event.target.closest(".remove-condition")
+      if (removeButton) {
+        event.preventDefault()
+        event.stopPropagation()
+        removeButton.closest(".rule-condition-row")?.remove()
+      }
+    }
+
+    const conditionsHTML = current.conditions.map(conditionHTML).join("")
+  
+    document.addEventListener("click", onRuleEditorClick, true)
+
+    let result: { label: string; color: string; icon: string; conditionMode: "all" | "any"; conditions: Condition[] } | null = null
+    try {
+      result = await foundry.applications.api.DialogV2.prompt({
+        window: { title: isNew ? "New Epithet Rule" : "Edit Epithet Rule" },
+        content: `
+          <div class="codex-rule-editor">
+            <div class="rule-main-row">
+              <input id="rule-icon"  type="text"  value="${current.icon}" placeholder="⚔️"/>
+              <input id="rule-label" type="text"  value="${current.label}" placeholder="Epithet name"/>
+              <input id="rule-color" type="color" value="${current.color}"/>
+            </div>
+            <div class="rule-mode-row">
+              <label>Conditions match:</label>
+              <select id="rule-mode">
+                <option value="all" ${current.conditionMode === "all" ? "selected" : ""}>ALL (AND)</option>
+                <option value="any" ${current.conditionMode === "any" ? "selected" : ""}>ANY (OR)</option>
+              </select>
+            </div>
+            <div id="rule-conditions">${conditionsHTML}</div>
+            <button id="add-condition" class="codex-btn" type="button">+ Add Condition</button>
+          </div>
+        `,
+        ok: {
+          label: "Save",
+          callback: (_event: Event, _btn: HTMLButtonElement, dialog: any) => {
+            const el = dialog.element as HTMLElement
+            const label = (el.querySelector("#rule-label") as HTMLInputElement).value.trim()
+            const color = (el.querySelector("#rule-color") as HTMLInputElement).value
+            const icon  = (el.querySelector("#rule-icon")  as HTMLInputElement).value.trim()
+            const conditionMode = (el.querySelector("#rule-mode") as HTMLSelectElement).value as "all" | "any"
+    
+            const conditions: Condition[] = []
+            el.querySelectorAll(".rule-condition-row").forEach(row => {
+              const stat      = (row.querySelector(".cond-stat")       as HTMLSelectElement).value
+              const operator  = (row.querySelector(".cond-op")         as HTMLSelectElement).value
+              const threshold = parseInt((row.querySelector(".cond-threshold") as HTMLInputElement).value) || 0
+              conditions.push({ stat: stat as any, operator: operator as any, threshold })
+            })
+    
+            return { label, color, icon, conditionMode, conditions }
+          }
+        }
+      }) as { label: string; color: string; icon: string; conditionMode: "all" | "any"; conditions: Condition[] } | null
+    } finally {
+      document.removeEventListener("click", onRuleEditorClick, true)
+    }
+  
+    if (!result?.label) return
+  
+    const savedRule = { ...current, ...result }
+    await saveRule(savedRule)
+    await this._refreshRuleActors(savedRule.scope === "actor" ? savedRule.actorId : undefined)
+    void this.render()
+  }
+
+  private async _refreshRuleActors(actorId?: string): Promise<void> {
+    if (actorId) {
+      const actor = game.actors?.get(actorId)
+      if (actor) await refreshEpithets(actor)
+      return
+    }
+
+    const actors = (game.actors?.contents ?? []).filter(actor => actor.hasPlayerOwner)
+    await Promise.all(actors.map(actor => refreshEpithets(actor)))
+  }
+
 
   private _selectActor(actorId: string, tab?: string): void {
     this._activeActorId = actorId

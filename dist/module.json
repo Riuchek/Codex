@@ -1,7 +1,7 @@
 {
   "id": "codex",
   "title": "Codex",
-  "version": "0.1.0",
+  "version": "0.1.5",
   "compatibility": {
     "minimum": "11",
     "verified": "13"
@@ -10,16 +10,11 @@
   "esmodules": ["module.mjs"],
   "styles": ["styles/codex.css"],
   "description": "Campaign grimoire — statistics, epithets and expedition journal.",
+  "url": "https://github.com/Riuchek/Codex",
+  "manifest": "https://github.com/Riuchek/Codex/releases/latest/download/module.json",
+  "download": "https://github.com/Riuchek/Codex/releases/latest/download/codex.zip",
   "languages": [
-    {
-      "lang": "en",
-      "name": "English",
-      "path": "lang/en.json"
-    },
-    {
-      "lang": "pt-BR",
-      "name": "Português (Brasil)",
-      "path": "lang/pt-BR.json"
-    }
+    { "lang": "en",    "name": "English",             "path": "lang/en.json" },
+    { "lang": "pt-BR", "name": "Português (Brasil)",  "path": "lang/pt-BR.json" }
   ]
 }

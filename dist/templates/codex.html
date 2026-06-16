@@ -17,9 +17,12 @@
         <a class="codex-tab active" data-tab="stats">{{localize "CODEX.TabStats"}}</a>
         <a class="codex-tab" data-tab="journal">{{localize "CODEX.TabJournal"}}</a>
         <a class="codex-tab" data-tab="epithets">{{localize "CODEX.TabEpithets"}}</a>
+        {{#if @root.isGM}}
+        <a class="codex-tab" data-tab="settings">Settings</a>
+        {{/if}}
       </nav>
 
-      {{!-- Stats --}}
+    
       <section class="codex-panel" data-panel="stats">
         <ul class="codex-stats">
           <li>
@@ -67,17 +70,17 @@
         {{#if @root.isGM}}
         <div class="codex-reset-area">
           <button class="codex-btn codex-btn-danger" data-action="reset-stats" data-actor-id="{{this.id}}">
-            ↺ {{localize "CODEX.ResetStats"}}
+            {{localize "CODEX.ResetStats"}}
           </button>
         </div>
         {{/if}}
       </section>
 
-      {{!-- Diário --}}
+     
       <section class="codex-panel" data-panel="journal" style="display:none">
         <div class="codex-journal-header">
           <button class="codex-btn" data-action="new-entry" data-actor-id="{{this.id}}">
-            + {{localize "CODEX.NewEntry"}}
+            {{localize "CODEX.NewEntry"}}
           </button>
         </div>
         <div class="codex-entries">
@@ -103,17 +106,17 @@
         </div>
       </section>
 
-      {{!-- Alcunhas --}}
+    
       <section class="codex-panel" data-panel="epithets" style="display:none">
         <div class="codex-epithets-header">
-          <input class="codex-input" type="text" placeholder="{{localize "CODEX.EpithetPlaceholder"}}" data-actor-id="{{this.id}}" />
+          <input class="codex-input" type="text" placeholder='{{localize "CODEX.EpithetPlaceholder"}}' data-actor-id="{{this.id}}" />
           <button class="codex-btn" data-action="add-epithet" data-actor-id="{{this.id}}">{{localize "CODEX.EpithetAdd"}}</button>
         </div>
         <div class="codex-epithets-list">
           {{#each this.record.epithets}}
           <div class="codex-epithet-row">
-            <span class="epithet {{#if this.auto}}auto{{/if}}">
-              {{#if this.auto}}🎲{{else}}✍️{{/if}} {{this.label}}
+            <span class="epithet {{#if this.auto}}auto{{/if}}" {{#if this.color}}data-color="{{this.color}}"{{/if}}>
+              {{#if this.icon}}{{this.icon}}{{else}}{{#if this.auto}}🎲{{else}}✍️{{/if}}{{/if}} {{this.label}}
             </span>
             {{#unless this.auto}}
             <button class="codex-btn-icon" data-action="remove-epithet" data-label="{{this.label}}" data-actor-id="{{../id}}">🗑️</button>
@@ -125,6 +128,78 @@
         </div>
       </section>
 
+        {{#if @root.isGM}}
+        <section class="codex-panel codex-settings-panel" data-panel="settings" style="display:none">
+
+          <div class="settings-group">
+            <h3 class="settings-group-title">System</h3>
+            <div class="settings-row">
+              <label>{{localize "CODEX.SettingHpPath"}}</label>
+              <input class="codex-input" type="text" data-setting="hpPath" value="{{@root.settings.hpPath}}"/>
+            </div>
+            <div class="settings-row">
+              <label>{{localize "CODEX.SettingAttackFlavor"}}</label>
+              <input class="codex-input" type="text" data-setting="attackFlavor" value="{{@root.settings.attackFlavor}}"/>
+            </div>
+            <div class="settings-row">
+              <button class="codex-btn" data-action="save-system-settings">Save</button>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h3 class="settings-group-title">
+              Global Epithet Rules
+              <button class="codex-btn" data-action="new-global-rule" data-actor-id="">+ Add Rule</button>
+            </h3>
+            <div class="settings-rules-list">
+              {{#each @root.globalRules}}
+              <div class="settings-rule-row" data-rule-id="{{this.id}}">
+                <span class="rule-icon">{{this.icon}}</span>
+                <span class="rule-label" data-color="{{this.color}}">{{this.label}}</span>
+                <span class="rule-conditions">
+                  {{#each this.conditions}}
+                  {{this.stat}} {{this.operator}} {{this.threshold}}{{#unless @last}} {{../conditionMode}} {{/unless}}
+                  {{/each}}
+                </span>
+                <div class="rule-actions">
+                  <button class="codex-btn-icon" data-action="edit-rule" data-rule-id="{{this.id}}">✎</button>
+                  <button class="codex-btn-icon" data-action="delete-rule" data-rule-id="{{this.id}}">🗑️</button>
+                </div>
+              </div>
+              {{else}}
+              <p class="codex-empty">No global rules yet.</p>
+              {{/each}}
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h3 class="settings-group-title">
+              Rules for {{this.record.name}}
+              <button class="codex-btn" data-action="new-actor-rule" data-actor-id="{{this.id}}">+ Add Rule</button>
+            </h3>
+            <div class="settings-rules-list">
+              {{#each this.actorRules}}
+              <div class="settings-rule-row" data-rule-id="{{this.id}}">
+                <span class="rule-icon">{{this.icon}}</span>
+                <span class="rule-label" data-color="{{this.color}}">{{this.label}}</span>
+                <span class="rule-conditions">
+                  {{#each this.conditions}}
+                  {{this.stat}} {{this.operator}} {{this.threshold}}{{#unless @last}} {{../conditionMode}} {{/unless}}
+                  {{/each}}
+                </span>
+                <div class="rule-actions">
+                  <button class="codex-btn-icon" data-action="edit-rule" data-rule-id="{{this.id}}">✎</button>
+                  <button class="codex-btn-icon" data-action="delete-rule" data-rule-id="{{this.id}}">🗑️</button>
+                </div>
+              </div>
+              {{else}}
+              <p class="codex-empty">No rules for this character yet.</p>
+              {{/each}}
+            </div>
+          </div>
+
+        </section>
+        {{/if}}
     </div>
     {{/each}}
   </main>
