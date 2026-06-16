@@ -223,9 +223,6 @@ var DEFAULT_RULES = [
 		}]
 	}
 ];
-function getNestedValue(obj, path) {
-	return path.split(".").reduce((acc, key) => acc?.[key], obj);
-}
 //#endregion
 //#region src/data/SettingsManager.ts
 var SETTINGS_KEY = "codexSettings";
@@ -322,6 +319,22 @@ async function updateStats(actor, patch) {
 		});
 	});
 }
+async function incrementStats(actor, delta) {
+	return enqueue(actor, async () => {
+		const current = getRecord(actor);
+		const updatedStats = { ...current.stats };
+		for (const key of Object.keys(delta)) {
+			const amount = delta[key];
+			if (typeof amount === "number" && amount !== 0) updatedStats[key] += amount;
+		}
+		const newEpithets = checkEpithetRules(updatedStats, current.epithets, actor.id ?? "");
+		await actor.setFlag(MODULE_ID, "record", {
+			...current,
+			stats: updatedStats,
+			epithets: newEpithets
+		});
+	});
+}
 async function refreshEpithets(actor) {
 	return enqueue(actor, async () => {
 		const current = getRecord(actor);
@@ -373,39 +386,126 @@ function checkEpithetRules(stats, current, actorId) {
 	return [...manual, ...auto];
 }
 //#endregion
+//#region src/data/trackingActor.ts
+var trackingActorId = "";
+function setTrackingActorId(id) {
+	trackingActorId = id;
+}
+function getTrackingActor() {
+	if (!trackingActorId) return null;
+	return game.actors?.get(trackingActorId) ?? null;
+}
+//#endregion
+//#region src/data/rollUtils.ts
+function stripHtml(text) {
+	return text.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+function getMessageFlavor(message) {
+	const raw = message.flavor;
+	if (typeof raw !== "string" || !raw) return "";
+	return stripHtml(raw).toLowerCase();
+}
+function parseRoll(data) {
+	if (data instanceof Roll) return data;
+	try {
+		if (typeof data === "string") return Roll.fromJSON(data);
+		if (typeof data === "object" && data !== null) return Roll.fromData(data);
+	} catch {
+		return null;
+	}
+	return null;
+}
+function getMessageRolls(message) {
+	const source = message._source?.rolls ?? message.rolls ?? [];
+	if (!source?.length) return [];
+	return source.map(parseRoll).filter((roll) => roll !== null);
+}
+function getRollDice(roll) {
+	const dice = roll.dice;
+	if (dice?.length) return dice;
+	return (roll.terms ?? []).filter((term) => typeof term?.faces === "number");
+}
+function dieResults(die) {
+	if (die.results?.length) return die.results.map((r) => r.result ?? r);
+	if (typeof die.total === "number") return [die.total];
+	return [];
+}
+function findD20(roll) {
+	return getRollDice(roll).find((d) => d.faces === 20);
+}
+function isD20Critical(roll) {
+	const d20 = findD20(roll);
+	if (!d20) return false;
+	return dieResults(d20).some((r) => r === 20);
+}
+function isD20CritFail(roll) {
+	const d20 = findD20(roll);
+	if (!d20) return false;
+	return dieResults(d20).some((r) => r === 1);
+}
+function isMaxOnMainDie(roll) {
+	const die = getRollDice(roll)[0] ?? findD20(roll);
+	if (!die) return false;
+	const faces = die.faces ?? 20;
+	return dieResults(die).some((r) => r === faces);
+}
+function isNatural1OnMainDie(roll) {
+	const die = getRollDice(roll)[0] ?? findD20(roll);
+	if (!die) return false;
+	return dieResults(die).some((r) => r === 1);
+}
+function matchesAttackFlavor(message, attackFlavor) {
+	const needle = attackFlavor.trim().toLowerCase();
+	if (!needle) return false;
+	if (getMessageFlavor(message).includes(needle)) return true;
+	return getMessageRolls(message).some((roll) => {
+		return (typeof roll.options?.flavor === "string" ? stripHtml(roll.options.flavor).toLowerCase() : "").includes(needle);
+	});
+}
+function getHpDelta(actor, diff, hpPath) {
+	const newHp = getNestedValueFromDiff(diff, hpPath);
+	if (newHp === void 0) return void 0;
+	const oldHp = getNestedValueFromDiff(actor, hpPath);
+	if (typeof oldHp !== "number" || typeof newHp !== "number") return void 0;
+	const delta = oldHp - newHp;
+	return delta > 0 ? delta : void 0;
+}
+function getNestedValueFromDiff(obj, path) {
+	const nested = path.split(".").reduce((acc, key) => acc?.[key], obj);
+	if (nested !== void 0) return nested;
+	if (obj?.[path] !== void 0) return obj[path];
+}
+//#endregion
 //#region src/data/hooks.ts
 function registerHooks() {
 	Hooks.on("createChatMessage", async (message) => {
-		if (!message.isRoll) return;
+		if (!message.isAuthor) return;
+		if (!message.isRoll && !message.rolls?.length) return;
 		const actor = getActorFromMessage(message);
-		if (!actor) return;
-		const current = getRecord(actor);
-		const flavor = message.flavor?.toLowerCase() ?? "";
-		const attackFlavor = (game.settings?.get("codex", "attackFlavor") ?? "attacking").toLowerCase();
-		if (flavor.includes(attackFlavor)) {
-			const attackRoll = message.rolls?.[0];
-			const damageRoll = message.rolls?.[1];
-			const d20 = attackRoll?.dice.find((d) => d.faces === 20);
-			const isCritical = d20?.total === 20;
-			const isCriticalFail = d20?.total === 1;
+		if (!actor?.hasPlayerOwner) return;
+		const rolls = getMessageRolls(message);
+		if (!rolls.length) return;
+		const attackFlavor = getSettings().attackFlavor;
+		if (matchesAttackFlavor(message, attackFlavor)) {
+			const attackRoll = rolls[0];
+			const damageRoll = rolls[1];
+			const isCritical = isD20Critical(attackRoll);
+			const isCriticalFail = isD20CritFail(attackRoll);
 			const damageDealt = damageRoll?.total ?? 0;
-			await updateStats(actor, {
-				criticals: current.stats.criticals + (isCritical ? 1 : 0),
-				criticalFails: current.stats.criticalFails + (isCriticalFail ? 1 : 0),
-				damageDealt: current.stats.damageDealt + damageDealt
+			await incrementStats(actor, {
+				criticals: isCritical ? 1 : 0,
+				criticalFails: isCriticalFail ? 1 : 0,
+				damageDealt
 			});
 			if (isCritical) ui.notifications?.info(`Codex | ${game.i18n?.format("CODEX.NotifCritical", { name: actor.name })}`);
 			return;
 		}
-		const roll = message.rolls?.[0];
-		if (!roll) return;
-		const mainDie = roll.dice[0];
-		const total = mainDie?.total ?? 0;
-		const isCritical = total === (mainDie?.faces ?? 20);
-		const isCritFail = total === 1;
-		await updateStats(actor, {
-			criticals: current.stats.criticals + (isCritical ? 1 : 0),
-			criticalFails: current.stats.criticalFails + (isCritFail ? 1 : 0)
+		const roll = rolls[0];
+		const isCritical = isMaxOnMainDie(roll);
+		const isCritFail = isNatural1OnMainDie(roll);
+		await incrementStats(actor, {
+			criticals: isCritical ? 1 : 0,
+			criticalFails: isCritFail ? 1 : 0
 		});
 		if (isCritical) ui.notifications?.info(`Codex | ${game.i18n?.format("CODEX.NotifCritical", { name: actor.name })}`);
 	});
@@ -419,25 +519,30 @@ function registerHooks() {
 		});
 	});
 	Hooks.on("preUpdateActor", (actor, diff) => {
-		const hpPath = game.settings?.get("codex", "hpPath") ?? "system.attributes.hp.value";
-		const newHp = getNestedValue(diff, hpPath);
-		if (newHp === void 0) return;
-		const oldHp = getNestedValue(actor, hpPath);
-		if (oldHp === void 0) return;
-		const delta = oldHp - newHp;
-		if (delta <= 0) return;
-		handleDamageTaken(actor, delta);
+		if (!actor.hasPlayerOwner) return;
+		const delta = getHpDelta(actor, diff, getSettings().hpPath);
+		if (delta === void 0) return;
+		incrementStats(actor, { damageTaken: delta });
 	});
-	async function handleDamageTaken(actor, delta) {
-		await updateStats(actor, { damageTaken: getRecord(actor).stats.damageTaken + delta });
-	}
 }
 function getActorFromMessage(message) {
+	const speakerActor = message.speakerActor;
+	if (speakerActor) return speakerActor;
 	const speakerId = message.speaker?.actor;
 	if (speakerId) return game.actors?.get(speakerId) ?? null;
 	const tokenId = message.speaker?.token;
-	if (tokenId) return (canvas?.tokens?.get(tokenId))?.actor ?? null;
-	return null;
+	if (tokenId) {
+		const token = canvas?.tokens?.get(tokenId);
+		if (token?.actor) return token.actor;
+	}
+	const authorId = typeof message.author === "string" ? message.author : message.author?.id;
+	if (authorId) {
+		const user = game.users?.get(authorId);
+		if (user?.character) return user.character;
+	}
+	const controlled = canvas?.tokens?.controlled ?? [];
+	if (controlled.length === 1 && controlled[0]?.actor) return controlled[0].actor;
+	return getTrackingActor();
 }
 //#endregion
 //#region src/ui/CodexApp.ts
@@ -777,6 +882,7 @@ var CodexApp = class extends HandlebarsApplicationMixin(ApplicationV2) {
 	}
 	_selectActor(actorId, tab) {
 		this._activeActorId = actorId;
+		setTrackingActorId(actorId);
 		this.element.querySelectorAll(".codex-actor-item").forEach((el) => el.classList.remove("active"));
 		this.element.querySelector(`[data-actor-id="${actorId}"]`)?.classList.add("active");
 		this.element.querySelectorAll(".codex-detail").forEach((el) => el.style.display = "none");

@@ -61,6 +61,31 @@ export async function updateStats(
   })
 }
 
+export async function incrementStats(
+  actor: Actor,
+  delta: Partial<ActorRecord["stats"]>
+): Promise<void> {
+  return enqueue(actor, async () => {
+    const current = getRecord(actor)
+    const updatedStats = { ...current.stats }
+
+    for (const key of Object.keys(delta) as StatKey[]) {
+      const amount = delta[key]
+      if (typeof amount === "number" && amount !== 0) {
+        updatedStats[key] += amount
+      }
+    }
+
+    const newEpithets = checkEpithetRules(updatedStats, current.epithets, actor.id ?? "")
+
+    await actor.setFlag(MODULE_ID as any, "record", {
+      ...current,
+      stats: updatedStats,
+      epithets: newEpithets,
+    })
+  })
+}
+
 export async function refreshEpithets(actor: Actor): Promise<void> {
   return enqueue(actor, async () => {
     const current = getRecord(actor)

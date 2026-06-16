@@ -1,54 +1,59 @@
-import { MODULE_ID, getNestedValue } from "../constants"
-import { getRecord, updateStats } from "./ActorRecord"
+import { MODULE_ID } from "../constants"
+import { getRecord, incrementStats } from "./ActorRecord"
+import { getSettings } from "./SettingsManager"
+import { getTrackingActor } from "./trackingActor"
+import {
+  getMessageRolls,
+  getHpDelta,
+  isD20Critical,
+  isD20CritFail,
+  isMaxOnMainDie,
+  isNatural1OnMainDie,
+  matchesAttackFlavor,
+} from "./rollUtils"
 
 export function registerHooks() {
   Hooks.on("createChatMessage", async (message: ChatMessage) => {
-    if (!message.isRoll) return
-  
+    if (!(message as any).isAuthor) return
+    if (!message.isRoll && !message.rolls?.length) return
+
     const actor = getActorFromMessage(message)
-    if (!actor) return
-  
-    const current = getRecord(actor)
-    const flavor = (message as any).flavor?.toLowerCase() ?? ""
-    const attackFlavor = (game.settings?.get(MODULE_ID as any, "attackFlavor" as any) as string ?? "attacking").toLowerCase()
-    const isAttack = flavor.includes(attackFlavor)
-  
+    if (!actor?.hasPlayerOwner) return
+
+    const rolls = getMessageRolls(message)
+    if (!rolls.length) return
+
+    const attackFlavor = getSettings().attackFlavor
+    const isAttack = matchesAttackFlavor(message, attackFlavor)
+
     if (isAttack) {
-      const attackRoll = message.rolls?.[0]
-      const damageRoll = message.rolls?.[1]
-  
-      const d20 = attackRoll?.dice.find((d: any) => d.faces === 20)
-      const isCritical     = d20?.total === 20
-      const isCriticalFail = d20?.total === 1
-      const damageDealt    = damageRoll?.total ?? 0
-  
-      await updateStats(actor, {
-        criticals:     current.stats.criticals     + (isCritical ? 1 : 0),
-        criticalFails: current.stats.criticalFails + (isCriticalFail ? 1 : 0),
-        damageDealt:   current.stats.damageDealt   + damageDealt,
+      const attackRoll = rolls[0]
+      const damageRoll = rolls[1]
+      const isCritical = isD20Critical(attackRoll)
+      const isCriticalFail = isD20CritFail(attackRoll)
+      const damageDealt = damageRoll?.total ?? 0
+
+      await incrementStats(actor, {
+        criticals: isCritical ? 1 : 0,
+        criticalFails: isCriticalFail ? 1 : 0,
+        damageDealt,
       })
-  
+
       if (isCritical) {
         ui.notifications?.info(`Codex | ${game.i18n?.format("CODEX.NotifCritical", { name: actor.name })}`)
-
       }
       return
     }
-  
-    const roll = message.rolls?.[0]
-    if (!roll) return
-  
-    const mainDie      = roll.dice[0]
-    const total        = mainDie?.total ?? 0
-    const faces        = mainDie?.faces ?? 20
-    const isCritical   = total === faces
-    const isCritFail   = total === 1
-  
-    await updateStats(actor, {
-      criticals:     current.stats.criticals     + (isCritical ? 1 : 0),
-      criticalFails: current.stats.criticalFails + (isCritFail ? 1 : 0),
+
+    const roll = rolls[0]
+    const isCritical = isMaxOnMainDie(roll)
+    const isCritFail = isNatural1OnMainDie(roll)
+
+    await incrementStats(actor, {
+      criticals: isCritical ? 1 : 0,
+      criticalFails: isCritFail ? 1 : 0,
     })
-  
+
     if (isCritical) {
       ui.notifications?.info(`Codex | ${game.i18n?.format("CODEX.NotifCritical", { name: actor.name })}`)
     }
@@ -56,7 +61,7 @@ export function registerHooks() {
 
   Hooks.on("updateActor", async (actor: Actor, diff: any) => {
     if (!diff.name && !diff.img) return
-  
+
     const current = getRecord(actor)
     await actor.setFlag(MODULE_ID as any, "record", {
       ...current,
@@ -66,29 +71,17 @@ export function registerHooks() {
   })
 
   Hooks.on("preUpdateActor", (actor: Actor, diff: any): void => {
-    const hpPath = game.settings?.get(MODULE_ID as any, "hpPath" as any) as string ?? "system.attributes.hp.value"
-  
-    const newHp = getNestedValue(diff, hpPath)
-    if (newHp === undefined) return
-  
-    const oldHp = getNestedValue(actor, hpPath)
-    if (oldHp === undefined) return
-  
-    const delta = oldHp - newHp
-    if (delta <= 0) return
-  
-    void handleDamageTaken(actor, delta)
+    if (!actor.hasPlayerOwner) return
+    const delta = getHpDelta(actor, diff, getSettings().hpPath)
+    if (delta === undefined) return
+    void incrementStats(actor, { damageTaken: delta })
   })
-  
-  async function handleDamageTaken(actor: Actor, delta: number): Promise<void> {
-    const current = getRecord(actor)
-    await updateStats(actor, {
-      damageTaken: current.stats.damageTaken + delta,
-    })
-  }
 }
 
 function getActorFromMessage(message: ChatMessage): Actor | null {
+  const speakerActor = (message as any).speakerActor as Actor | null | undefined
+  if (speakerActor) return speakerActor
+
   const speakerId = message.speaker?.actor
   if (speakerId) {
     return game.actors?.get(speakerId) ?? null
@@ -97,8 +90,21 @@ function getActorFromMessage(message: ChatMessage): Actor | null {
   const tokenId = message.speaker?.token
   if (tokenId) {
     const token = canvas?.tokens?.get(tokenId)
-    return token?.actor ?? null
+    if (token?.actor) return token.actor
   }
 
-  return null
+  const authorId = typeof message.author === "string"
+    ? message.author
+    : (message.author as any)?.id
+  if (authorId) {
+    const user = game.users?.get(authorId)
+    if (user?.character) return user.character
+  }
+
+  const controlled = canvas?.tokens?.controlled ?? []
+  if (controlled.length === 1 && controlled[0]?.actor) {
+    return controlled[0].actor
+  }
+
+  return getTrackingActor()
 }

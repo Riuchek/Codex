@@ -1,5 +1,6 @@
 import { MODULE_ID } from "../constants"
 import { getRecord, refreshEpithets, updateRecord, updateStats } from "../data/ActorRecord"
+import { setTrackingActorId } from "../data/trackingActor"
 import { getSettings, saveSettings, saveRule, deleteRule } from "../data/SettingsManager"
 import type { JournalEntry, EpithetRule, Condition } from "../types"
 
@@ -370,6 +371,7 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   private _selectActor(actorId: string, tab?: string): void {
     this._activeActorId = actorId
+    setTrackingActorId(actorId)
   
     this.element.querySelectorAll(".codex-actor-item")
       .forEach(el => el.classList.remove("active"))
