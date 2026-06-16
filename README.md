@@ -4,7 +4,16 @@
 
 Codex is a Foundry VTT module for tracking the story your campaign leaves behind: combat statistics, earned epithets, and a free-form expedition journal for each adventurer.
 
+**Current version:** 0.2.0
 
+## Using Codex
+
+1. Open the **Scene Controls** sidebar (token/layer tools).
+2. Click the **Codex** button (book icon).
+3. Select a player-owned actor from the sidebar.
+4. Switch between **Statistics**, **Journal**, and **Epithets** tabs.
+
+GMs also see a **Settings** tab to configure system paths, attack detection, and epithet rules.
 
 ## Features
 
@@ -14,13 +23,13 @@ Codex keeps a lightweight record for every player-owned actor:
 
 ![Statistics tab](docs/screenshot-stats.png)
 
-- **Damage Dealt**: counted from attack chat rolls.
+- **Damage Dealt**: counted from attack chat rolls (second roll total when the message matches the configured attack flavor).
 - **Damage Taken**: counted when the actor's HP is reduced.
-- **Critical Hits**: counted from maximum die results.
-- **Critical Fails**: counted from natural 1 results.
+- **Critical Hits**: natural 20 on attack rolls (d20); maximum result on the primary die for other rolls.
+- **Critical Fails**: natural 1 on attack rolls (d20); natural 1 on the primary die for other rolls.
 - **Kill Count**: tracked manually, because not every kill happens inside Foundry.
 
-Statistics can also be adjusted manually from the Codex window.
+Statistics can also be adjusted manually from the Codex window. Resetting statistics removes automatic epithets but keeps manual ones.
 
 ### Expedition Journal
 
@@ -32,7 +41,7 @@ Journal entries include:
 
 - **Title**: session number, in-game date, scene name, or any label that fits.
 - **Content**: free text with no required format.
-- **Tags**: built-in tags such as `combat`, `npc`, `secret`, and `reminder`, plus custom tags.
+- **Tags**: free-form comma-separated labels (e.g. `combat`, `npc`, `secret`).
 
 ### Epithets
 
@@ -40,31 +49,21 @@ Journal entries include:
 
 Characters can earn epithets automatically by reaching statistic thresholds, or manually when the table wants to commemorate a memorable moment.
 
-| Stat | Threshold | Epithet |
-| --- | ---: | --- |
-| Kill Count | 25 | Hothead |
-| Kill Count | 50 | Assassin |
-| Kill Count | 75 | Butcher |
-| Kill Count | 100 | Bloodthirsty |
-| Critical Hits | 10 | Lucky |
-| Critical Hits | 25 | Blessed |
-| Critical Hits | 50 | Wheel of Fortune |
-| Critical Fails | 10 | Jammed |
-| Critical Fails | 25 | Fumbler |
-| Critical Fails | 50 | Atomized by the Dice |
-| Damage Taken | 75 | Friend of Pain |
-| Damage Taken | 250 | Damage Magnet |
-| Damage Taken | 500 | Plot Armor |
-| Damage Dealt | 100 | Hard Hitter |
-| Damage Dealt | 250 | Sharp Blade |
-| Damage Dealt | 500 | Avenger |
-| Damage Dealt | 1000 | The Unstoppable |
+Default automatic epithets ship with the module and are fully editable by the GM in the **Settings** tab. Thresholds per stat:
 
-Manual epithets are never removed automatically.
+| Stat | Thresholds |
+| --- | --- |
+| Kill Count | 25, 50, 75, 100 |
+| Critical Hits | 10, 25, 50 |
+| Critical Fails | 10, 25, 50 |
+| Damage Taken | 75, 250, 500 |
+| Damage Dealt | 100, 250, 500, 1000 |
+
+GMs can create, edit, and delete rules — including per-actor rules with multiple conditions (AND/OR). Manual epithets are never removed automatically.
 
 ## System Support
 
-Codex is designed to work across RPG systems. Open **Game Settings > Codex** to configure the paths and chat text used by your system.
+Codex is designed to work across RPG systems. Open the Codex window and go to the **Settings** tab (GM only) to configure the paths and chat text used by your system.
 
 | Setting | Default | Description |
 | --- | --- | --- |
@@ -84,10 +83,6 @@ Tested systems:
 
 ## Installation
 
-### Foundry Module Browser
-
-Search for **Codex** in Foundry's **Add-on Modules** browser if it is available in your module list.
-
 ### Manual Installation
 
 1. In Foundry VTT, open **Add-on Modules**.
@@ -98,6 +93,10 @@ Search for **Codex** in Foundry's **Add-on Modules** browser if it is available 
 https://github.com/Riuchek/Codex/releases/latest/download/module.json
 ```
 
+### Foundry Module Browser
+
+Not yet listed in the official Foundry package repository. Use manual installation above.
+
 ## Development
 
 Install dependencies and build the distributable module:
@@ -107,7 +106,13 @@ npm install
 npm run build
 ```
 
-The built module files are generated in `dist/`.
+For live rebuilds during development:
+
+```sh
+npm run watch
+```
+
+The built module files are generated in `dist/`. Symlink `dist/` to `{FoundryData}/modules/codex/` for local testing.
 
 ## Compatibility
 
@@ -115,12 +120,14 @@ The built module files are generated in `dist/`.
 | --- | --- |
 | v13 | Verified |
 | v12 | Untested |
-| v11 | Untested |
+| v11 | Minimum declared in manifest, untested |
 
 ## Languages
 
 - English
 - Portuguese (Brazil)
+
+Note: the rule editor dialog currently uses hardcoded English strings. Full i18n coverage is on the roadmap.
 
 ## License
 

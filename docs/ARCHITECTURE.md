@@ -2,6 +2,8 @@
 
 This document describes the internal architecture of the Codex module for Foundry VTT. It is intended for developers, contributors, and AI models working on this codebase.
 
+**Current version:** 0.2.0
+
 ---
 
 ## Table of Contents
@@ -26,7 +28,7 @@ Codex is a Foundry VTT module that tracks campaign statistics, epithets, and jou
 
 **Core design decisions:**
 
-- **Data lives on the actor via Flags** — each actor carries its own `CodexRecord` as a Foundry flag. When an actor is deleted, its Codex data is deleted with it. This is intentional ("banished from history").
+- **Data lives on the actor via Flags** — each actor carries its own `ActorRecord` as a Foundry flag. When an actor is deleted, its Codex data is deleted with it. This is intentional ("banished from history").
 - **No external database** — all persistence goes through Foundry's built-in `setFlag`/`getFlag` API, which syncs automatically between connected clients.
 - **System-agnostic by configuration** — HP path and attack flavor are configurable so the module works across different RPG systems without code changes.
 
@@ -53,13 +55,12 @@ codex/
 ├── src/                        # TypeScript source
 │   ├── module.ts               # Entry point — lifecycle hooks only
 │   ├── types.ts                # All interfaces and types
-│   ├── constants.ts            # MODULE_ID, DEFAULT_RULES, pure helpers
+│   ├── constants.ts            # MODULE_ID, DEFAULT_RULES, getNestedValue
 │   ├── data/
 │   │   ├── ActorRecord.ts      # CRUD for per-actor flags (update queue)
 │   │   ├── SettingsManager.ts  # CRUD for module-level settings
 │   │   ├── rollUtils.ts        # Dice/roll parsing — no Foundry side effects
-│   │   ├── hooks.ts            # Foundry event listeners
-│   │   └── trackingActor.ts    # Optional actor tracking helper
+│   │   └── hooks.ts            # Foundry event listeners
 │   ├── engine/
 │   │   └── RuleEngine.ts       # Pure epithet rule evaluation
 │   └── ui/
@@ -123,7 +124,7 @@ JournalEntry
   ├── title        // Free text — session name, date, etc.
   ├── content      // Free text body
   ├── createdAt    // Date.now() — used for chronological ordering
-  └── tags         // string[] — built-in + custom
+  └── tags         // string[] — free-form labels entered comma-separated in UI
 
 EpithetRule        // Stored in CodexSettings, not per-actor
   ├── id           // Unique identifier
@@ -154,7 +155,7 @@ Responsible for reading and writing actor flags. All writes go through an **upda
 
 ```ts
 getRecord(actor)
-// Pure read of the CodexRecord flag.
+// Pure read of the ActorRecord flag.
 // Returns EMPTY_RECORD() when no flag is set — does not write.
 
 initRecord(actor)
@@ -189,7 +190,7 @@ Pure helpers for parsing Foundry chat rolls and detecting criticals. Used by `ho
 getMessageRolls(message)     // Parse Roll objects from a ChatMessage
 getMessageFlavor(message)    // Normalized flavor text
 matchesAttackFlavor(...)     // Check message/roll flavor against settings
-isD20Critical(roll)        // Natural 20 on a d20 term
+isD20Critical(roll)          // Natural 20 on a d20 term
 isD20CritFail(roll)          // Natural 1 on a d20 term
 isMaxOnMainDie(roll)         // Max on primary die (non-attack rolls)
 isNatural1OnMainDie(roll)    // Natural 1 on primary die
@@ -198,7 +199,7 @@ getHpDelta(actor, diff, path) // HP decrease from preUpdateActor diff
 
 ### SettingsManager (`src/data/SettingsManager.ts`)
 
-Manages the `CodexSettings` object stored in `game.settings` (world-scoped, not per-actor).
+Manages the `CodexSettings` object stored in `game.settings` (world-scoped, not per-actor). Registered with `config: false` so nothing appears in Foundry's native settings panel.
 
 **Key functions:**
 
@@ -211,7 +212,7 @@ saveRule(rule)        // Upserts a rule by ID
 deleteRule(ruleId)    // Removes a rule by ID
 ```
 
-**Default rules** are defined in `constants.ts` as `DEFAULT_RULES: EpithetRule[]`. On first load, these are used as the initial value for the settings. The GM can modify or delete them — they are not re-applied on each load.
+**Default rules** are defined in `constants.ts` as `DEFAULT_RULES: EpithetRule[]`. On first world load, these become the initial `rules` value. Labels are campaign-specific (Portuguese). The GM can modify or delete them — defaults are not re-applied on each load.
 
 ### Hooks (`src/data/hooks.ts`)
 
@@ -221,17 +222,35 @@ Listens to Foundry events and calls data layer functions. No UI logic here.
 
 | Hook | Purpose |
 |---|---|
-| `createChatMessage` | Detects attack rolls to capture criticals, critical fails, and damage dealt |
+| `createChatMessage` | Tracks criticals, critical fails, and damage dealt from chat rolls |
 | `preUpdateActor` | Detects HP reduction to capture damage taken |
 | `updateActor` | Syncs `name` and `img` via `updateRecord` when the actor is renamed or avatar changed |
 
-**Attack detection logic:**
+**Chat message logic (`createChatMessage`):**
 
-The module reads `message.flavor` and checks if it contains the configured `attackFlavor` string (default: `"attacking"`). If it matches:
-- `rolls[0]` = attack roll (d20) → check for critical/critical fail
-- `rolls[1]` = damage roll → add total to `damageDealt`
+Only processes messages authored by the current user (`message.isAuthor`) that contain rolls. The target actor is resolved via `getActorFromMessage` (see below).
 
-This is a Shadowdark-specific convention. Other systems may send rolls differently — hence the configurable `attackFlavor` setting.
+When the message matches the configured `attackFlavor` (default: `"attacking"`):
+- `rolls[0]` = attack roll (d20) → natural 20 = critical, natural 1 = critical fail
+- `rolls[1]` = damage roll → total added to `damageDealt`
+- Critical hits trigger `ui.notifications.info` with `CODEX.NotifCritical`
+
+When the message does **not** match attack flavor (ability checks, saves, etc.):
+- `rolls[0]` → max on primary die = critical, natural 1 on primary die = critical fail
+- No damage dealt is recorded
+
+This attack pattern is Shadowdark-specific. Other systems may send rolls differently — hence the configurable `attackFlavor` setting.
+
+**Actor resolution (`getActorFromMessage`):**
+
+Tried in order:
+1. `message.speakerActor`
+2. `message.speaker.actor` → `game.actors.get`
+3. `message.speaker.token` → canvas token's actor
+4. Message author's assigned character
+5. Single controlled canvas token's actor
+
+Only player-owned actors are tracked.
 
 **Damage taken logic:**
 
@@ -247,9 +266,10 @@ Extends `HandlebarsApplicationMixin(ApplicationV2)` — the Foundry v13 applicat
 
 **State:**
 ```ts
-_state: CodexAppState   // { activeActorId, activeTab }
-_hookId: number         // updateActor hook ID, cleaned up on close
-_abortController        // Aborts DOM listeners from the previous render
+_state: CodexAppState       // { activeActorId, activeTab }
+_hookId: number              // updateActor hook ID, cleaned up on close
+_settingsHookId: number      // clientSettingChanged hook ID, cleaned up on close
+_abortController             // Aborts DOM listeners from the previous render
 ```
 
 **Lifecycle:**
@@ -258,7 +278,7 @@ _abortController        // Aborts DOM listeners from the previous render
 render()
   └─► _prepareContext()   // initRecord for player actors, build template data
   └─► Handlebars renders codex.html
-  └─► _onRender()         // AbortController + panel activation + updateActor hook
+  └─► _onRender()         // AbortController + panel activation + hooks
 ```
 
 **_prepareContext** returns:
@@ -296,8 +316,10 @@ Each panel exposes a static `activate(root, signal, ...)` method. All writes go 
 
 | Dialog | Purpose |
 |---|---|
-| `RuleEditorDialog` | Create/edit an `EpithetRule` |
+| `RuleEditorDialog` | Create/edit an `EpithetRule` with multi-condition support (`+ Add Condition`) |
 | `JournalEntryDialog` | Create/edit a `JournalEntry` |
+
+`RuleEditorDialog` currently uses hardcoded English strings — not yet wired to `lang/*.json`.
 
 ### Template (`templates/codex.html`)
 
@@ -323,14 +345,14 @@ Handlebars template. Uses `{{localize "CODEX.Key"}}` for all user-facing strings
 
 ## Settings System
 
-All Codex configuration is stored in a single `game.settings` key (`codexSettings`) as a JSON object. This avoids polluting the Foundry settings panel with individual entries.
+All Codex configuration is stored in a single `game.settings` key (`codexSettings`) as a JSON object. Registered with `config: false` to avoid polluting Foundry's native settings panel.
 
 The settings object (`CodexSettings`) contains:
 - `hpPath` — configures which actor field tracks HP
 - `attackFlavor` — configures which chat messages count as attacks
 - `rules` — the full list of `EpithetRule` objects
 
-Settings are edited inside the Codex window (Settings tab, GM only), not in Foundry's native settings panel.
+Settings are edited inside the Codex window (**Settings** tab, GM only), not in Foundry's native **Configure Settings** menu.
 
 ---
 
@@ -357,7 +379,7 @@ Condition evaluation:
 After evaluation, the epithet list is rebuilt from scratch:
 1. All **manual** epithets are preserved as-is (never auto-removed)
 2. **Automatic** epithets are recalculated — only rules that currently evaluate to true produce an epithet
-3. New automatic epithets (not in previous list) trigger a notification
+3. New automatic epithets (not in previous list) trigger a notification via `CODEX.NotifEpithet`
 
 This means reducing a stat below a threshold removes the corresponding automatic epithet immediately.
 
@@ -414,9 +436,11 @@ This module targets Foundry v13, which deprecated the legacy `Application` class
 
 ### i18n
 
-All user-facing strings use `game.i18n.localize("CODEX.Key")` in TypeScript and `{{localize "CODEX.Key"}}` in Handlebars templates. String definitions live in `lang/en.json` and `lang/pt-BR.json`. Foundry selects the file automatically based on the user's language setting.
+Most user-facing strings use `game.i18n.localize("CODEX.Key")` in TypeScript and `{{localize "CODEX.Key"}}` in Handlebars templates. String definitions live in `lang/en.json` and `lang/pt-BR.json`. Foundry selects the file automatically based on the user's language setting.
 
 For strings with variables, use `game.i18n.format("CODEX.Key", { variable: value })`.
+
+**Exception:** `RuleEditorDialog` strings are hardcoded in English and not yet in the lang files.
 
 ---
 
@@ -425,8 +449,9 @@ For strings with variables, use `game.i18n.format("CODEX.Key", { variable: value
 ### Local Development
 
 ```bash
-yarn build    # single build → dist/
-yarn watch    # rebuild on file change → dist/
+npm install
+npm run build    # single build → dist/
+npm run watch    # rebuild on file change → dist/
 ```
 
 A symlink from `dist/` to `{FoundryData}/modules/codex/` enables live development: save a file, Vite rebuilds in ~25ms, F5 in the browser picks up changes.
@@ -451,16 +476,16 @@ Defined in `.github/workflows/release.yml`. Triggered by pushing a version tag (
 
 **Steps:**
 1. Checkout repository
-2. `yarn install --frozen-lockfile` — clean install
-3. `yarn build` — produces `dist/`
+2. `npm ci` — clean install from `package-lock.json`
+3. `npm run build` — produces `dist/`
 4. Inject tag version into `dist/module.json` via `jq`
-5. `zip -r codex.zip dist/` — package the module
+5. Zip contents of `dist/` into `codex.zip`
 6. Publish GitHub Release with `codex.zip` and `module.json` as assets
 
 **To release:**
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 The manifest URL for Foundry installation:
@@ -472,11 +497,15 @@ https://github.com/Riuchek/Codex/releases/latest/download/module.json
 
 ## Known Limitations
 
-1. **Attack detection is heuristic** — relies on `message.flavor` containing a configurable string. Systems that don't include recognizable flavor text in attack messages will not have `damageDealt` or criticals captured.
+1. **Attack detection is heuristic** — relies on `message.flavor` containing a configurable string. Systems that don't include recognizable flavor text in attack messages will not have `damageDealt` or attack-roll criticals captured.
 
 2. **`damageDealt` only captures weapon attacks** — spells, abilities, and other damage sources that don't match the attack flavor pattern are not counted.
 
 3. **`getRecord` returns an empty default when no flag exists** — callers that need persisted data must call `initRecord` first (CodexApp does this in `_prepareContext`; hooks assume records exist for tracked actors).
+
+4. **Rule editor is not i18n'd** — dialog labels and stat names are hardcoded in English.
+
+5. **Dead code in `constants.ts`** — `DEFAULT_TAGS` is defined but unused; journal tags are free-form only.
 
 ---
 
@@ -491,9 +520,11 @@ https://github.com/Riuchek/Codex/releases/latest/download/module.json
 - [x] Extract roll/dice logic into `rollUtils.ts`
 - [x] Surface update queue failures via `ui.notifications.error`
 - [x] SettingsPanel: refresh only the settings panel instead of full Codex re-render
+- [ ] Remove unused `DEFAULT_TAGS` from `constants.ts` (or wire it into journal UI)
 
 ### Features
-- [ ] Rule editor: `+ Add Condition` button working inside the dialog
+- [x] Rule editor: `+ Add Condition` button working inside the dialog
+- [ ] Rule editor: i18n for dialog strings
 - [ ] Rule editor: live preview of which actors currently match a rule
 - [ ] Journal: search/filter entries by tag
 - [ ] Journal: rich text support (markdown or Foundry's ProseMirror)
