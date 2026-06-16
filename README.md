@@ -1,42 +1,47 @@
-# Codex — Campaign Grimoire for Foundry VTT
+# Codex - Campaign Grimoire for Foundry VTT
 
-> *"Every hero deserves to have their story told."*
+> "Every hero deserves to have their story told."
 
-Codex is a Foundry VTT module that works as a campaign grimoire — automatically tracking each adventurer's combat statistics, earned epithets, and a free-form expedition journal.
+Codex is a Foundry VTT module for tracking the story your campaign leaves behind: combat statistics, earned epithets, and a free-form expedition journal for each adventurer.
 
-![Statistics Tab](docs/screenshot-stats.png)
 
----
 
 ## Features
 
-### 📊 Combat Statistics
-Automatically captured from chat rolls — no setup required:
-- **Damage Dealt** — total damage caused by the character
-- **Damage Taken** — total damage received
-- **Critical Hits** — number of critical successes rolled
-- **Critical Fails** — number of critical failures rolled
-- **Kill Count** — manually tracked, because not every kill happens inside Foundry
+### Combat Statistics
 
-All statistics can be manually edited by the GM at any time.
+Codex keeps a lightweight record for every player-owned actor:
 
-![Journal Tab](docs/screenshot-journal.png)
+![Statistics tab](docs/screenshot-stats.png)
 
-### 📖 Expedition Journal
-A free-form journal for each character. Players and GMs can create entries with:
-- **Title** — session number, in-game date, or whatever fits the narrative
-- **Content** — free text, no formatting restrictions
-- **Tags** — built-in tags (`combat`, `npc`, `secret`, `reminder`) plus any custom tag
+- **Damage Dealt**: counted from attack chat rolls.
+- **Damage Taken**: counted when the actor's HP is reduced.
+- **Critical Hits**: counted from maximum die results.
+- **Critical Fails**: counted from natural 1 results.
+- **Kill Count**: tracked manually, because not every kill happens inside Foundry.
 
-### ⚔️ Epithets
-![Epithets Tab](docs/screenshot-epithets.png)
+Statistics can also be adjusted manually from the Codex window.
 
-Characters earn epithets in two ways:
+### Expedition Journal
 
-**Automatic** — unlocked when stat thresholds are reached:
+![Journal tab](docs/screenshot-journal.png)
+
+Each character has a free-form journal for session notes, discoveries, reminders, secrets, NPC details, or anything else worth preserving.
+
+Journal entries include:
+
+- **Title**: session number, in-game date, scene name, or any label that fits.
+- **Content**: free text with no required format.
+- **Tags**: built-in tags such as `combat`, `npc`, `secret`, and `reminder`, plus custom tags.
+
+### Epithets
+
+![Epithets tab](docs/screenshot-epithets.png)
+
+Characters can earn epithets automatically by reaching statistic thresholds, or manually when the table wants to commemorate a memorable moment.
 
 | Stat | Threshold | Epithet |
-|---|---|---|
+| --- | ---: | --- |
 | Kill Count | 25 | Hothead |
 | Kill Count | 50 | Assassin |
 | Kill Count | 75 | Butcher |
@@ -55,72 +60,76 @@ Characters earn epithets in two ways:
 | Damage Dealt | 500 | Avenger |
 | Damage Dealt | 1000 | The Unstoppable |
 
-**Manual** — the GM or players can add any epithet they want. These are never removed automatically.
+Manual epithets are never removed automatically.
 
----
+## System Support
 
-## Multi-System Support
-
-Codex works with any RPG system. Go to **Game Settings → Codex** and configure:
+Codex is designed to work across RPG systems. Open **Game Settings > Codex** to configure the paths and chat text used by your system.
 
 | Setting | Default | Description |
-|---|---|---|
-| HP Path | `system.attributes.hp.value` | Path to the HP attribute in your system |
-| Attack Chat Flavor | `attacking` | Word that identifies attack messages in chat |
+| --- | --- | --- |
+| HP Path | `system.attributes.hp.value` | Path to the actor HP value in your system data. |
+| Attack Chat Flavor | `attacking` | Text used to identify attack messages in chat. |
 
-To find the HP path for your system, open the browser console (F12) and run:
+To inspect the HP structure for your current system, open the browser console with `F12` and run:
+
 ```js
 game.actors.contents[0].system
 ```
 
-**Tested systems:**
-- Shadowdark RPG
-- D&D 5e (set Attack Chat Flavor to `attack`)
+Tested systems:
 
----
+- Shadowdark RPG
+- Dungeons & Dragons 5e, with **Attack Chat Flavor** set to `attack`
 
 ## Installation
 
-### From the Foundry Module Browser
-Search for **Codex** in the Add-on Modules browser.
+### Foundry Module Browser
 
-### Manual Install
-1. In Foundry VTT, go to **Add-on Modules**
-2. Click **Install Module**
-3. Paste the manifest URL:
-   ```
-   https://github.com/YOUR_USERNAME/codex/releases/latest/download/module.json
-   ```
+Search for **Codex** in Foundry's **Add-on Modules** browser if it is available in your module list.
 
----
+### Manual Installation
+
+1. In Foundry VTT, open **Add-on Modules**.
+2. Click **Install Module**.
+3. Paste this manifest URL:
+
+```text
+https://github.com/Riuchek/Codex/releases/latest/download/module.json
+```
+
+## Development
+
+Install dependencies and build the distributable module:
+
+```sh
+npm install
+npm run build
+```
+
+The built module files are generated in `dist/`.
 
 ## Compatibility
 
 | Foundry Version | Status |
-|---|---|
-| v13 | ✅ Verified |
-| v12 | ⚠️ Untested |
-| v11 | ⚠️ Untested |
-
----
+| --- | --- |
+| v13 | Verified |
+| v12 | Untested |
+| v11 | Untested |
 
 ## Languages
 
-- 🇺🇸 English
-- 🇧🇷 Português (Brasil)
-
----
+- English
+- Portuguese (Brazil)
 
 ## License
 
-[MIT License](LICENSE.md) — free to use, modify, and distribute.
-
----
+Codex is released under the [MIT License](LICENSE.md).
 
 ## Credits
 
 Developed by **Riuchek** for Shadowdark RPG campaigns.
 
-Typography: [Cinzel](https://fonts.google.com/specimen/Cinzel) and [EB Garamond](https://fonts.google.com/specimen/EB+Garamond) via Google Fonts.
+Typography uses [Cinzel](https://fonts.google.com/specimen/Cinzel) and [EB Garamond](https://fonts.google.com/specimen/EB+Garamond) from Google Fonts.
 
-Texture: [Transparent Textures](https://www.transparenttextures.com/).
+Texture from [Transparent Textures](https://www.transparenttextures.com/).
