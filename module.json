@@ -4,10 +4,22 @@
   "version": "0.1.0",
   "compatibility": {
     "minimum": "11",
-    "verified": "12"
+    "verified": "13"
   },
   "authors": [{ "name": "Riuchek" }],
   "esmodules": ["module.mjs"],
   "styles": ["styles/codex.css"],
-  "description": "Grimório de campanha — estatísticas, alcunhas e diário de expedição."
+  "description": "Campaign grimoire — statistics, epithets and expedition journal.",
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    },
+    {
+      "lang": "pt-BR",
+      "name": "Português (Brasil)",
+      "path": "lang/pt-BR.json"
+    }
+  ]
 }

@@ -29,12 +29,12 @@ export function registerHooks() {
       })
   
       if (isCritical) {
-        ui.notifications?.info(`Codex | ${actor.name} acertou um crítico!`)
+        ui.notifications?.info(`Codex | ${game.i18n?.format("CODEX.NotifCritical", { name: actor.name })}`)
+
       }
       return
     }
   
-    // fallback rolagem genérica
     const roll = message.rolls?.[0]
     if (!roll) return
   
@@ -50,7 +50,7 @@ export function registerHooks() {
     })
   
     if (isCritical) {
-      ui.notifications?.info(`Codex | ${actor.name} acertou um crítico!`)
+      ui.notifications?.info(`Codex | ${game.i18n?.format("CODEX.NotifCritical", { name: actor.name })}`)
     }
   })
 

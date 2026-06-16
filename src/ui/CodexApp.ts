@@ -24,6 +24,7 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
   override async _prepareContext(_options?: object): Promise<any> {
     const actors = (game.actors?.contents ?? [])
       .filter(a => a.hasPlayerOwner)
+      .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""))
       .map(a => ({ id: a.id ?? "", record: getRecord(a) }))
   
     return { actors, isGM: game.user?.isGM ?? false }
@@ -32,7 +33,6 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
   override async _onRender(context: object, options: object): Promise<void> {
     await super._onRender(context, options)
   
-    // restaura ator e tab anteriores, ou seleciona o primeiro
     const targetId = this._activeActorId ||
       (this.element.querySelector(".codex-actor-item") as HTMLElement)?.dataset.actorId || ""
     this._selectActor(targetId)
@@ -46,8 +46,8 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!actor) return
     
         const confirmed = await foundry.applications.api.DialogV2.confirm({
-          window: { title: "Resetar estatísticas" },
-          content: `<p>Tem certeza? Todas as estatísticas de <strong>${actor.name}</strong> serão zeradas. Alcunhas automáticas também serão removidas.</p>`,
+          window: { title: game.i18n?.localize("CODEX.ResetConfirmTitle") },
+          content: game.i18n?.format("CODEX.ResetConfirmContent", { name: actor.name }),
         })
     
         if (!confirmed) return
@@ -67,16 +67,14 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
     })
 
 
-    // clique nos atores
     this.element.querySelectorAll(".codex-actor-item").forEach(el => {
       el.addEventListener("click", () => {
         const id = (el as HTMLElement).dataset.actorId ?? ""
-        this._activeTab = "stats" // reset tab ao trocar de ator
+        this._activeTab = "stats"
         this._selectActor(id)
       })
     })
   
-    // clique nas tabs
     this.element.querySelectorAll(".codex-tab").forEach(el => {
       el.addEventListener("click", () => {
         const tab = (el as HTMLElement).dataset.tab ?? ""
@@ -85,7 +83,6 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
       })
     })
   
-    // nova entrada de diário
     this.element.querySelectorAll("[data-action='new-entry']").forEach(el => {
       el.addEventListener("click", () => {
         const actorId = (el as HTMLElement).dataset.actorId ?? ""
@@ -93,7 +90,6 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
       })
     })
   
-    // editar entrada
     this.element.querySelectorAll("[data-action='edit-entry']").forEach(el => {
       el.addEventListener("click", () => {
         const actorId = (el as HTMLElement).dataset.actorId ?? ""
@@ -102,7 +98,6 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
       })
     })
   
-    // deletar entrada
     this.element.querySelectorAll("[data-action='delete-entry']").forEach(el => {
       el.addEventListener("click", () => {
         const actorId = (el as HTMLElement).dataset.actorId ?? ""
@@ -111,7 +106,6 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
       })
     })
   
-    // adicionar alcunha manual
     this.element.querySelectorAll("[data-action='add-epithet']").forEach(el => {
       el.addEventListener("click", () => {
         const actorId = (el as HTMLElement).dataset.actorId ?? ""
@@ -125,7 +119,6 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
       })
     })
   
-    // remover alcunha manual
     this.element.querySelectorAll("[data-action='remove-epithet']").forEach(el => {
       el.addEventListener("click", () => {
         const actorId = (el as HTMLElement).dataset.actorId ?? ""
@@ -143,7 +136,6 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
         const actorId = (el as HTMLElement).dataset.actorId ?? ""
         const stat    = (el as HTMLElement).dataset.stat ?? ""
     
-        // toggle entre display e input
         const editing = input.style.display === "none"
         display.style.display = editing ? "none" : ""
         input.style.display   = editing ? "" : "none"
@@ -158,7 +150,6 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
             if (!actor) return
             const current = getRecord(actor)
             await updateStats(actor, { ...current.stats, [stat]: val })
-            // render vai restaurar o display
           }
     
           input.addEventListener("blur", save, { once: true })
@@ -173,7 +164,6 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
       })
     })
   
-    // limpa hook anterior antes de registrar novo
     if (this._hookId !== -1) Hooks.off("updateActor" as any, this._hookId)
     this._hookId = Hooks.on("updateActor" as any, () => {
       void this.render()
@@ -185,7 +175,6 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this._hookId !== -1) Hooks.off("updateActor" as any, this._hookId)
   }
 
-  // ── Seleção de ator ──────────────────────────────────────────────
   private _selectActor(actorId: string, tab?: string): void {
     this._activeActorId = actorId
   
@@ -203,7 +192,6 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  // ── Tabs ─────────────────────────────────────────────────────────
   private _switchTab(detail: HTMLElement, tab: string): void {
     this._activeTab = tab
   
@@ -217,25 +205,24 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (panel) panel.style.display = "block"
   }
 
-  // ── Diário ───────────────────────────────────────────────────────
   private async _newJournalEntry(actorId: string): Promise<void> {
     const actor = game.actors?.get(actorId)
     if (!actor) return
 
     const result = await foundry.applications.api.DialogV2.prompt({
-      window: { title: "Nova entrada no diário" },
+      window: { title: game.i18n?.localize("CODEX.NewEntryTitle") },
       content: `
         <div style="display:flex;flex-direction:column;gap:8px;padding:8px">
-          <input id="entry-title" type="text" placeholder="Título (ex: Sessão 3, Dia do Eclipse...)" style="width:100%"/>
-          <textarea id="entry-content" rows="6" placeholder="O que aconteceu..." style="width:100%;resize:vertical"></textarea>
+          <input id="entry-title" type="text" placeholder="${game.i18n?.localize("CODEX.EntryTitlePlaceholder")}" style="width:100%"/>
+          <textarea id="entry-content" rows="6" placeholder="${game.i18n?.localize("CODEX.EntryContentPlaceholder")}" style="width:100%;resize:vertical"></textarea>
           <div>
-            <label style="font-size:12px;color:#aaa">Tags (separadas por vírgula)</label>
-            <input id="entry-tags" type="text" placeholder="combate, npc, segredo..." style="width:100%"/>
+            <label style="font-size:12px;color:#aaa">${game.i18n?.localize("CODEX.EntryTagsLabel")}</label>
+            <input id="entry-tags" type="text" placeholder="${game.i18n?.localize("CODEX.EntryTagsPlaceholder")}" style="width:100%"/>
           </div>
         </div>
       `,
       ok: {
-        label: "Salvar",
+        label: game.i18n?.localize("CODEX.EntrySave"),
         callback: (_event: Event, _btn: HTMLButtonElement, dialog: any) => {
           const el = dialog.element as HTMLElement
           const title   = (el.querySelector("#entry-title")   as HTMLInputElement).value.trim()
@@ -252,7 +239,7 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const record = getRecord(actor)
     const entry: JournalEntry = {
       id: foundry.utils.randomID(),
-      title: result.title || "Sem título",
+      title: result.title ?? game.i18n?.localize("CODEX.EntryNoTitle") ?? "",
       content: result.content,
       createdAt: Date.now(),
       tags: result.tags,
@@ -305,8 +292,8 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!actor) return
 
     const confirmed = await foundry.applications.api.DialogV2.confirm({
-      window: { title: "Deletar entrada" },
-      content: "<p>Tem certeza? Esta entrada será apagada permanentemente.</p>",
+      window: { title: game.i18n?.localize("CODEX.DeleteEntryTitle") },
+      content: game.i18n?.format("CODEX.DeleteEntryContent", { name: actor.name }),
     })
 
     if (!confirmed) return
@@ -318,7 +305,6 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
     void this.render()
   }
 
-  // ── Alcunhas ─────────────────────────────────────────────────────
   private async _addEpithet(actorId: string, label: string): Promise<void> {
     const actor = game.actors?.get(actorId)
     if (!actor) return

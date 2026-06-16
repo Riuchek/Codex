@@ -1,0 +1,40 @@
+{
+    "CODEX.TabStats": "Statistics",
+    "CODEX.TabJournal": "Journal",
+    "CODEX.TabEpithets": "Epithets",
+  
+    "CODEX.StatDamageDealt": "Damage Dealt",
+    "CODEX.StatDamageTaken": "Damage Taken",
+    "CODEX.StatCriticals": "Critical Hits",
+    "CODEX.StatCriticalFails": "Critical Fails",
+    "CODEX.StatKillCount": "Kill Count",
+  
+    "CODEX.ResetStats": "↺ Reset Statistics",
+    "CODEX.ResetConfirmTitle": "Reset Statistics",
+    "CODEX.ResetConfirmContent": "Are you sure? All statistics for <strong>{name}</strong> will be zeroed. Automatic epithets will also be removed.",
+  
+    "CODEX.NewEntry": "+ New Entry",
+    "CODEX.NewEntryTitle": "New Journal Entry",
+    "CODEX.EntryTitlePlaceholder": "Title (e.g. Session 3, Day of the Eclipse...)",
+    "CODEX.EntryContentPlaceholder": "What happened...",
+    "CODEX.EntryTagsLabel": "Tags (comma separated)",
+    "CODEX.EntryTagsPlaceholder": "combat, npc, secret...",
+    "CODEX.EntrySave": "Save",
+    "CODEX.EntryNoTitle": "Untitled",
+    "CODEX.EntryEmpty": "No entries yet.",
+    "CODEX.EditEntryTitle": "Edit Entry",
+    "CODEX.DeleteEntryTitle": "Delete Entry",
+    "CODEX.DeleteEntryContent": "<p>Are you sure? This entry will be permanently deleted.</p>",
+  
+    "CODEX.EpithetPlaceholder": "New epithet...",
+    "CODEX.EpithetAdd": "Add",
+    "CODEX.EpithetEmpty": "No epithets yet.",
+  
+    "CODEX.NotifCritical": "{name} landed a critical hit!",
+    "CODEX.NotifEpithet": "New epithet unlocked: {label}!",
+  
+    "CODEX.SettingHpPath": "HP Path",
+    "CODEX.SettingHpPathHint": "Path to the HP attribute in the current system. E.g: system.attributes.hp.value",
+    "CODEX.SettingAttackFlavor": "Attack Chat Flavor",
+    "CODEX.SettingAttackFlavorHint": "Word that identifies attack messages in chat. E.g: 'attacking' for Shadowdark, 'attack' for D&D 5e."
+  }
