@@ -15,6 +15,11 @@
 }
 
 /* ── Janela do Foundry ────────────────────────────────────────── */
+#codex-app.application {
+  display: flex;
+  flex-direction: column;
+}
+
 #codex-app {
   background: transparent !important;
   box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 120px rgba(0,0,0,0.4) !important;
@@ -34,12 +39,18 @@
   background: transparent !important;
   overflow: hidden !important;
   color: var(--codex-ink);
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Layout principal ─────────────────────────────────────────── */
 .codex-layout {
   display: flex;
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
   background: var(--codex-parchment);
   background-image:
     url("https://www.transparenttextures.com/patterns/old-map.png");
@@ -132,24 +143,58 @@
 
 /* ── Área principal ───────────────────────────────────────────── */
 .codex-main {
-  flex: 1;
-  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: none;
   flex-direction: column;
   overflow: hidden;
   position: relative;
 }
 
-.codex-detail {
-  flex: 1;
+.codex-main.is-visible {
   display: flex;
+}
+
+.codex-detail {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: none;
   flex-direction: column;
   overflow: hidden;
   padding: 20px 24px 16px;
 }
 
+.codex-detail.is-active {
+  display: flex;
+}
+
+.codex-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.codex-panel.is-active {
+  display: flex;
+}
+
+.codex-panel.codex-settings-panel.is-active {
+  display: block;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 /* ── Tabs ─────────────────────────────────────────────────────── */
 .codex-tabs {
   display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
   gap: 0;
   border-bottom: 2px solid var(--codex-border);
   margin-bottom: 16px;
@@ -266,6 +311,8 @@
   flex-direction: column;
   gap: 8px;
   overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .codex-epithet-row {
@@ -343,6 +390,7 @@
   gap: 12px;
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
 }
 
 .codex-entry {
@@ -432,18 +480,21 @@
 /* ── Scrollbar temática ───────────────────────────────────────── */
 .codex-entries::-webkit-scrollbar,
 .codex-epithets-list::-webkit-scrollbar,
+.codex-settings-panel::-webkit-scrollbar,
 .codex-sidebar::-webkit-scrollbar {
   width: 6px;
 }
 
 .codex-entries::-webkit-scrollbar-track,
 .codex-epithets-list::-webkit-scrollbar-track,
+.codex-settings-panel::-webkit-scrollbar-track,
 .codex-sidebar::-webkit-scrollbar-track {
   background: rgba(139,105,20,0.1);
 }
 
 .codex-entries::-webkit-scrollbar-thumb,
 .codex-epithets-list::-webkit-scrollbar-thumb,
+.codex-settings-panel::-webkit-scrollbar-thumb,
 .codex-sidebar::-webkit-scrollbar-thumb {
   background: var(--codex-gold);
   border-radius: 3px;
@@ -486,6 +537,7 @@
 .codex-settings-panel {
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
   color: var(--codex-ink);
 }
 
@@ -827,9 +879,18 @@
 }
 
 .codex-dashboard-container {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: none;
+  flex-direction: column;
   overflow: auto;
   padding: 16px;
+  color: var(--codex-ink);
+}
+
+.codex-dashboard-container.is-visible {
+  display: flex;
 }
 
 .codex-dashboard {
@@ -854,26 +915,51 @@
 .dashboard-table-wrap {
   overflow: auto;
   flex: 1;
+  min-height: 0;
 }
 
-.codex-dashboard-table {
+#codex-app .codex-dashboard-table {
   width: 100%;
+  min-width: 640px;
   border-collapse: collapse;
   font-family: 'EB Garamond', serif;
   font-size: 13px;
+  color: var(--codex-ink) !important;
+  background: var(--codex-parchment) !important;
 }
 
-.codex-dashboard-table th,
-.codex-dashboard-table td {
-  border: 1px solid rgba(139,105,20,0.25);
+#codex-app .codex-dashboard-table thead,
+#codex-app .codex-dashboard-table tbody,
+#codex-app .codex-dashboard-table tr {
+  background: transparent !important;
+}
+
+#codex-app .codex-dashboard-table th,
+#codex-app .codex-dashboard-table td {
+  border: 1px solid rgba(139,105,20,0.45) !important;
   padding: 6px 8px;
   text-align: center;
+  color: var(--codex-ink) !important;
+  background: rgba(244,228,193,0.95) !important;
 }
 
-.codex-dashboard-table th {
+#codex-app .codex-dashboard-table thead th {
   font-family: 'Cinzel', serif;
   font-size: 11px;
-  background: rgba(44,24,16,0.06);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--codex-parchment-dark) !important;
+  color: var(--codex-ink) !important;
+  -webkit-text-fill-color: var(--codex-ink);
+}
+
+#codex-app .codex-dashboard-table tbody tr:nth-child(even) td {
+  background: rgba(232,213,163,0.85) !important;
+}
+
+#codex-app .codex-dashboard-table td strong {
+  color: var(--codex-red) !important;
 }
 
 .dashboard-actor {
@@ -894,4 +980,54 @@
 .settings-data-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 760px) {
+  .codex-sidebar {
+    width: 80px;
+    min-width: 80px;
+    padding: 12px 6px;
+  }
+
+  .codex-actor-item img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .codex-actor-item span {
+    font-size: 9px;
+  }
+
+  .codex-detail {
+    padding: 12px 14px 10px;
+  }
+
+  .codex-tab {
+    font-size: 10px;
+    padding: 5px 10px;
+  }
+
+  .settings-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .settings-row label {
+    min-width: 0;
+  }
+
+  .settings-rule-row {
+    flex-wrap: wrap;
+  }
+
+  .rule-label,
+  .rule-conditions {
+    min-width: 0;
+  }
+
+  .dashboard-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 }

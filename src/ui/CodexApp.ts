@@ -145,15 +145,14 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   private _showDashboard(): void {
-    this.element.querySelector(".codex-main")?.setAttribute("style", "display:none")
-    this.element.querySelector(".codex-dashboard-container")?.setAttribute("style", "display:block")
+    this.element.querySelector(".codex-main")?.classList.remove("is-visible")
+    this.element.querySelector(".codex-dashboard-container")?.classList.add("is-visible")
     this.element.querySelectorAll(".codex-actor-item").forEach(el => el.classList.remove("active"))
   }
 
   private _showActors(): void {
-    this.element.querySelector(".codex-main")?.setAttribute("style", "display:block")
-    const dash = this.element.querySelector(".codex-dashboard-container")
-    if (dash) dash.setAttribute("style", "display:none")
+    this.element.querySelector(".codex-main")?.classList.add("is-visible")
+    this.element.querySelector(".codex-dashboard-container")?.classList.remove("is-visible")
   }
 
   private _patchActorView(actorId: string): void {
@@ -187,10 +186,10 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
       ?.classList.add("active")
 
     this.element.querySelectorAll(".codex-detail")
-      .forEach(el => ((el as HTMLElement).style.display = "none"))
+      .forEach(el => el.classList.remove("is-active"))
     const detail = this.element.querySelector(`[data-detail="${actorId}"]`) as HTMLElement
     if (detail) {
-      detail.style.display = "flex"
+      detail.classList.add("is-active")
       this._switchTab(detail, this._state.activeTab)
     }
   }
@@ -203,8 +202,8 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
     detail.querySelector(`[data-tab="${tab}"]`)?.classList.add("active")
 
     detail.querySelectorAll(".codex-panel")
-      .forEach(el => ((el as HTMLElement).style.display = "none"))
+      .forEach(el => el.classList.remove("is-active"))
     const panel = detail.querySelector(`[data-panel="${tab}"]`) as HTMLElement
-    if (panel) panel.style.display = "block"
+    if (panel) panel.classList.add("is-active")
   }
 }

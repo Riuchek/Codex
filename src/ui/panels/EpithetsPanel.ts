@@ -6,33 +6,37 @@ const escapeHtml = (value: string): string =>
 
 export class EpithetsPanel {
   static activate(root: HTMLElement, signal: AbortSignal): void {
-    root.querySelectorAll("[data-action='add-epithet']").forEach(el => {
-      el.addEventListener("click", async () => {
-        const actorId = (el as HTMLElement).dataset.actorId ?? ""
-        const input   = root.querySelector(
-          `.codex-input[data-actor-id="${actorId}"]`
-        ) as HTMLInputElement
-        const label = input?.value.trim()
-        if (!label) return
-
-        const actor = game.actors?.get(actorId)
-        if (!actor) return
-
-        const record = getRecord(actor)
-        if (record.epithets.some(e => e.label === label)) return
-
-        const epithet: Epithet = { label, auto: false }
-        await updateRecord(actor, { epithets: [...record.epithets, epithet] })
-        input.value = ""
-        this.refresh(root, actorId)
-      }, { signal })
-    })
-
     root.addEventListener("click", (e) => {
-      const target = (e.target as HTMLElement).closest<HTMLElement>("[data-action='remove-epithet']")
-      if (!target) return
-      void this._removeEpithet(root, target.dataset.actorId ?? "", target.dataset.label ?? "")
+      const addBtn = (e.target as HTMLElement).closest<HTMLElement>("[data-action='add-epithet']")
+      if (addBtn) {
+        void this._addEpithet(root, addBtn.dataset.actorId ?? "")
+        return
+      }
+
+      const removeBtn = (e.target as HTMLElement).closest<HTMLElement>("[data-action='remove-epithet']")
+      if (removeBtn) {
+        void this._removeEpithet(root, removeBtn.dataset.actorId ?? "", removeBtn.dataset.label ?? "")
+      }
     }, { signal })
+  }
+
+  private static async _addEpithet(root: HTMLElement, actorId: string): Promise<void> {
+    const input = root.querySelector(
+      `[data-detail="${actorId}"] [data-panel="epithets"] .codex-epithets-header .codex-input`
+    ) as HTMLInputElement | null
+    const label = input?.value.trim()
+    if (!label) return
+
+    const actor = game.actors?.get(actorId)
+    if (!actor) return
+
+    const record = getRecord(actor)
+    if (record.epithets.some(e => e.label === label)) return
+
+    const epithet: Epithet = { label, auto: false }
+    await updateRecord(actor, { epithets: [...record.epithets, epithet] })
+    if (input) input.value = ""
+    this.refresh(root, actorId)
   }
 
   private static async _removeEpithet(root: HTMLElement, actorId: string, label: string): Promise<void> {

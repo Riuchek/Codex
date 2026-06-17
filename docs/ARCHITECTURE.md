@@ -2,7 +2,7 @@
 
 This document describes the internal architecture of the Codex module for Foundry VTT. It is intended for developers, contributors, and AI models working on this codebase.
 
-**Current version:** 0.3.0
+**Current version:** 0.3.1
 
 ---
 

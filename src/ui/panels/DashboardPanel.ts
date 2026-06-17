@@ -8,7 +8,9 @@ const escapeHtml = (value: string): string =>
 
 export class DashboardPanel {
   static activate(root: HTMLElement, signal: AbortSignal): void {
-    root.querySelector("[data-action='close-dashboard']")?.addEventListener("click", () => {
+    root.addEventListener("click", (e) => {
+      const target = (e.target as HTMLElement).closest<HTMLElement>("[data-action='close-dashboard']")
+      if (!target?.closest(".codex-dashboard-container")) return
       root.dispatchEvent(new CustomEvent("codex-close-dashboard", { bubbles: true }))
     }, { signal })
   }

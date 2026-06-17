@@ -4,7 +4,7 @@
 
 Codex is a Foundry VTT module for tracking the story your campaign leaves behind: combat statistics, earned epithets, and a free-form expedition journal for each adventurer.
 
-**Current version:** 0.3.0
+**Current version:** 0.3.1
 
 ## Using Codex
 

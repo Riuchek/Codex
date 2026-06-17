@@ -14,13 +14,13 @@
     {{/if}}
   </aside>
 
-  <div class="codex-dashboard-container" style="display:none">
+  <div class="codex-dashboard-container">
     {{{dashboardHtml}}}
   </div>
 
   <main class="codex-main">
     {{#each actors}}
-    <div class="codex-detail" data-detail="{{this.id}}" style="display:none">
+    <div class="codex-detail" data-detail="{{this.id}}">
 
       <nav class="codex-tabs">
         <a class="codex-tab active" data-tab="stats">{{localize "CODEX.TabStats"}}</a>
@@ -31,7 +31,7 @@
         {{/if}}
       </nav>
 
-      <section class="codex-panel" data-panel="stats">
+      <section class="codex-panel is-active" data-panel="stats">
         <ul class="codex-stats">
           <li>
             <span>{{localize "CODEX.StatDamageDealt"}}</span>
@@ -92,7 +92,7 @@
         {{/if}}
       </section>
 
-      <section class="codex-panel" data-panel="journal" style="display:none">
+      <section class="codex-panel" data-panel="journal">
         <div class="codex-journal-header" data-journal-toolbar="{{this.id}}">
           <input class="codex-input journal-search" type="search"
             data-actor-id="{{this.id}}"
@@ -142,7 +142,7 @@
         </div>
       </section>
 
-      <section class="codex-panel" data-panel="epithets" style="display:none">
+      <section class="codex-panel" data-panel="epithets">
         <div class="codex-epithets-header">
           <input class="codex-input" type="text" placeholder='{{localize "CODEX.EpithetPlaceholder"}}' data-actor-id="{{this.id}}" />
           <button class="codex-btn" data-action="add-epithet" data-actor-id="{{this.id}}">{{localize "CODEX.EpithetAdd"}}</button>
@@ -164,7 +164,7 @@
       </section>
 
       {{#if @root.isGM}}
-      <section class="codex-panel codex-settings-panel" data-panel="settings" style="display:none">
+      <section class="codex-panel codex-settings-panel" data-panel="settings">
 
         <div class="settings-group">
           <h3 class="settings-group-title">{{localize "CODEX.SettingsSystem"}}</h3>
