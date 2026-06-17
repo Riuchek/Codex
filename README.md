@@ -4,7 +4,7 @@
 
 Codex is a Foundry VTT module for tracking the story your campaign leaves behind: combat statistics, earned epithets, and a free-form expedition journal for each adventurer.
 
-**Current version:** 0.2.0
+**Current version:** 0.3.0
 
 ## Using Codex
 
@@ -13,11 +13,29 @@ Codex is a Foundry VTT module for tracking the story your campaign leaves behind
 3. Select a player-owned actor from the sidebar.
 4. Switch between **Statistics**, **Journal**, and **Epithets** tabs.
 
-GMs also see a **Settings** tab to configure system paths, attack detection, and epithet rules.
+GMs also see a **Settings** tab to configure system paths, attack detection, epithet rules, and import/export data. A **Dashboard** button in the sidebar compares all characters side by side.
 
-## Features
+### Session vs Total Statistics
 
-### Combat Statistics
+Each stat tracks two values:
+
+- **Session** — counters since the last session reset (auto-tracked from chat and HP)
+- **Total** — cumulative lifetime value (used for epithet rules)
+
+GMs can reset session counters without affecting totals, or reset everything.
+
+### Expedition Journal
+
+![Journal tab](docs/screenshot-journal.png)
+
+Each character has a free-form journal for session notes, discoveries, reminders, secrets, NPC details, or anything else worth preserving.
+
+Journal entries include:
+
+- **Title**: session number, in-game date, scene name, or any label that fits.
+- **Content**: free text with **Markdown** support (`**bold**`, `*italic*`, headings, `code`).
+- **Tags**: quick-filter chips plus custom comma-separated labels.
+- **Search**: filter entries by title, content, or tag.
 
 Codex keeps a lightweight record for every player-owned actor:
 
@@ -29,21 +47,11 @@ Codex keeps a lightweight record for every player-owned actor:
 - **Critical Fails**: natural 1 on attack rolls (d20); natural 1 on the primary die for other rolls.
 - **Kill Count**: tracked manually, because not every kill happens inside Foundry.
 
-Statistics can also be adjusted manually from the Codex window. Resetting statistics removes automatic epithets but keeps manual ones.
+Statistics can also be adjusted manually from the Codex window. Resetting all statistics removes automatic epithets but keeps manual ones.
 
-### Expedition Journal
+## Features
 
-![Journal tab](docs/screenshot-journal.png)
-
-Each character has a free-form journal for session notes, discoveries, reminders, secrets, NPC details, or anything else worth preserving.
-
-Journal entries include:
-
-- **Title**: session number, in-game date, scene name, or any label that fits.
-- **Content**: free text with no required format.
-- **Tags**: free-form comma-separated labels (e.g. `combat`, `npc`, `secret`).
-
-### Epithets
+### Combat Statistics
 
 ![Epithets tab](docs/screenshot-epithets.png)
 
@@ -59,7 +67,15 @@ Default automatic epithets ship with the module and are fully editable by the GM
 | Damage Taken | 75, 250, 500 |
 | Damage Dealt | 100, 250, 500, 1000 |
 
-GMs can create, edit, and delete rules — including per-actor rules with multiple conditions (AND/OR). Manual epithets are never removed automatically.
+GMs can create, edit, and delete rules — including per-actor rules with multiple conditions (AND/OR). The rule editor shows a **live preview** of which characters currently match. Manual epithets are never removed automatically.
+
+### GM Dashboard
+
+Compare all player characters in one table: session and total stats side by side, plus epithet count. Open from the **Dashboard** button in the Codex sidebar.
+
+### Import / Export
+
+GMs can export all Codex data as JSON and import it back from the **Settings** tab — useful for backups or migrating worlds.
 
 ## System Support
 
@@ -104,6 +120,7 @@ Install dependencies and build the distributable module:
 ```sh
 npm install
 npm run build
+npm test
 ```
 
 For live rebuilds during development:
@@ -126,8 +143,6 @@ The built module files are generated in `dist/`. Symlink `dist/` to `{FoundryDat
 
 - English
 - Portuguese (Brazil)
-
-Note: the rule editor dialog currently uses hardcoded English strings. Full i18n coverage is on the roadmap.
 
 ## License
 

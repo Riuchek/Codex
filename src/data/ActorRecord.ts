@@ -1,27 +1,41 @@
 import { MODULE_ID } from "../constants"
 import { getRules } from "./SettingsManager"
 import { RuleEngine } from "../engine/RuleEngine"
-import type { ActorRecord } from "../types"
+import { actorUpdateQueue } from "./updateQueue"
+import type { ActorRecord, CombatStats } from "../types"
 
-const updateQueue: Map<string, Promise<void>> = new Map()
+export const EMPTY_STATS = (): CombatStats => ({
+  damageDealt: 0,
+  damageTaken: 0,
+  criticals: 0,
+  criticalFails: 0,
+  killCount: 0,
+})
 
-const EMPTY_RECORD = (): ActorRecord => ({
+export const EMPTY_RECORD = (): ActorRecord => ({
   name: "",
   img: "",
-  stats: {
-    damageDealt: 0,
-    damageTaken: 0,
-    criticals: 0,
-    criticalFails: 0,
-    killCount: 0,
-  },
+  stats: EMPTY_STATS(),
+  sessionStats: EMPTY_STATS(),
   epithets: [],
   journal: [],
 })
 
+export function normalizeRecord(raw: Partial<ActorRecord>): ActorRecord {
+  const base = { ...EMPTY_RECORD(), ...raw }
+  return {
+    ...base,
+    stats: { ...EMPTY_STATS(), ...raw.stats },
+    sessionStats: { ...EMPTY_STATS(), ...raw.sessionStats },
+    epithets: raw.epithets ?? [],
+    journal: raw.journal ?? [],
+  }
+}
+
 export function getRecord(actor: Actor): ActorRecord {
-  return actor.getFlag(MODULE_ID as any, "record") as ActorRecord | undefined
-    ?? EMPTY_RECORD()
+  const raw = actor.getFlag(MODULE_ID as any, "record") as Partial<ActorRecord> | undefined
+  if (!raw) return EMPTY_RECORD()
+  return normalizeRecord(raw)
 }
 
 export async function initRecord(actor: Actor): Promise<void> {
@@ -41,41 +55,78 @@ export async function updateRecord(
 ): Promise<void> {
   return enqueue(actor, async () => {
     const current = getRecord(actor)
-    await actor.setFlag(MODULE_ID as any, "record", { ...current, ...patch })
+    await actor.setFlag(MODULE_ID as any, "record", normalizeRecord({ ...current, ...patch }))
   })
 }
 
 export async function updateStats(
   actor: Actor,
-  patch: Partial<ActorRecord["stats"]>
+  patch: Partial<CombatStats>
 ): Promise<void> {
   return enqueue(actor, async () => {
     const current = getRecord(actor)
     const updatedStats = { ...current.stats, ...patch }
-    const rules = getRules(actor.id ?? "")
-    const { epithets, newlyUnlocked } = RuleEngine.apply(updatedStats, rules, current.epithets)
+    await writeStats(actor, current, updatedStats, current.sessionStats)
+  })
+}
 
-    for (const epithet of newlyUnlocked) {
-      ui.notifications?.info(
-        `Codex | ${game.i18n?.format("CODEX.NotifEpithet", { label: epithet.label })}`
-      )
+export async function incrementStats(
+  actor: Actor,
+  delta: Partial<CombatStats>
+): Promise<void> {
+  return enqueue(actor, async () => {
+    const current = getRecord(actor)
+    const updatedStats = { ...current.stats }
+    const updatedSession = { ...current.sessionStats }
+    for (const [key, value] of Object.entries(delta) as [keyof CombatStats, number][]) {
+      if (value === undefined) continue
+      updatedStats[key] += value
+      updatedSession[key] += value
     }
+    await writeStats(actor, current, updatedStats, updatedSession)
+  })
+}
 
-    await actor.setFlag(MODULE_ID as any, "record", {
-      ...current,
-      stats: updatedStats,
-      epithets,
-    })
+export async function resetSessionStats(actor: Actor): Promise<void> {
+  return updateRecord(actor, { sessionStats: EMPTY_STATS() })
+}
+
+export async function resetAllStats(actor: Actor): Promise<void> {
+  const current = getRecord(actor)
+  await updateRecord(actor, {
+    stats: EMPTY_STATS(),
+    sessionStats: EMPTY_STATS(),
+    epithets: current.epithets.filter(e => !e.auto),
+  })
+}
+
+async function writeStats(
+  actor: Actor,
+  current: ActorRecord,
+  updatedStats: CombatStats,
+  updatedSession: CombatStats
+): Promise<void> {
+  const rules = getRules(actor.id ?? "")
+  const { epithets, newlyUnlocked } = RuleEngine.apply(updatedStats, rules, current.epithets)
+
+  for (const epithet of newlyUnlocked) {
+    ui.notifications?.info(
+      `Codex | ${game.i18n?.format("CODEX.NotifEpithet", { label: epithet.label })}`
+    )
+  }
+
+  await actor.setFlag(MODULE_ID as any, "record", {
+    ...current,
+    stats: updatedStats,
+    sessionStats: updatedSession,
+    epithets,
   })
 }
 
 function enqueue(actor: Actor, fn: () => Promise<void>): Promise<void> {
   const id = actor.id ?? ""
-  const current = updateQueue.get(id) ?? Promise.resolve()
-  const next = current.then(fn).catch(err => {
-    console.error(`Codex | erro ao atualizar ${actor.name}:`, err)
-    ui.notifications?.error(`Codex | Failed to update ${actor.name}. See console for details.`)
+  return actorUpdateQueue.enqueue(id, fn).catch(err => {
+    console.error(`Codex | failed to update ${actor.name}:`, err)
+    ui.notifications?.error(`Codex | ${game.i18n?.format("CODEX.UpdateError", { name: actor.name ?? "" })}`)
   })
-  updateQueue.set(id, next)
-  return next
 }

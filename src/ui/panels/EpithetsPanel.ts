@@ -24,22 +24,26 @@ export class EpithetsPanel {
         const epithet: Epithet = { label, auto: false }
         await updateRecord(actor, { epithets: [...record.epithets, epithet] })
         input.value = ""
+        this.refresh(root, actorId)
       }, { signal })
     })
 
-    root.querySelectorAll("[data-action='remove-epithet']").forEach(el => {
-      el.addEventListener("click", async () => {
-        const actorId = (el as HTMLElement).dataset.actorId ?? ""
-        const label   = (el as HTMLElement).dataset.label   ?? ""
-        const actor   = game.actors?.get(actorId)
-        if (!actor) return
+    root.addEventListener("click", (e) => {
+      const target = (e.target as HTMLElement).closest<HTMLElement>("[data-action='remove-epithet']")
+      if (!target) return
+      void this._removeEpithet(root, target.dataset.actorId ?? "", target.dataset.label ?? "")
+    }, { signal })
+  }
 
-        const record = getRecord(actor)
-        await updateRecord(actor, {
-          epithets: record.epithets.filter(e => e.label !== label)
-        })
-      }, { signal })
+  private static async _removeEpithet(root: HTMLElement, actorId: string, label: string): Promise<void> {
+    const actor = game.actors?.get(actorId)
+    if (!actor) return
+
+    const record = getRecord(actor)
+    await updateRecord(actor, {
+      epithets: record.epithets.filter(e => e.label !== label)
     })
+    this.refresh(root, actorId)
   }
 
   static refresh(root: HTMLElement, actorId: string, record?: ActorRecord): void {

@@ -1,10 +1,15 @@
 import type { Condition, EpithetRule, Operator, StatKey } from "../../types"
+import { STAT_KEYS } from "../../types"
+import { getRecord } from "../../data/ActorRecord"
+import { RuleEngine } from "../../engine/RuleEngine"
+import { localizeStat } from "../../constants"
 
-const STATS: StatKey[] = ["killCount", "criticals", "criticalFails", "damageDealt", "damageTaken"]
 const OPS: Operator[] = [">=", "<=", "==", ">", "<"]
 
 const escapeHtml = (value: string): string =>
   foundry.utils.escapeHTML(value)
+
+const t = (key: string) => game.i18n?.localize(key) ?? key
 
 export class RuleEditorDialog {
   static async open(rule: EpithetRule | null, actorId?: string): Promise<EpithetRule | null> {
@@ -21,36 +26,40 @@ export class RuleEditorDialog {
     }
 
     const result = await foundry.applications.api.DialogV2.prompt({
-      window: { title: isNew ? "New Epithet Rule" : "Edit Epithet Rule" },
+      window: { title: isNew ? t("CODEX.RuleNewTitle") : t("CODEX.RuleEditTitle") },
       content: `
         <div class="codex-rule-editor">
           <div class="rule-main-row">
             <input id="rule-icon" class="codex-rule-input" type="text"
               value="${escapeHtml(current.icon)}" placeholder="⚔️"/>
             <input id="rule-label" class="codex-rule-input" type="text"
-              value="${escapeHtml(current.label)}" placeholder="Epithet name"/>
+              value="${escapeHtml(current.label)}" placeholder="${escapeHtml(t("CODEX.RuleLabelPlaceholder"))}"/>
             <input id="rule-color" type="color" value="${escapeHtml(current.color)}"/>
           </div>
           <div class="rule-mode-row">
-            <label>Conditions match:</label>
+            <label>${escapeHtml(t("CODEX.RuleConditionsMatch"))}</label>
             <select id="rule-mode" class="codex-rule-input">
-              <option value="all" ${current.conditionMode === "all" ? "selected" : ""}>ALL (AND)</option>
-              <option value="any" ${current.conditionMode === "any" ? "selected" : ""}>ANY (OR)</option>
+              <option value="all" ${current.conditionMode === "all" ? "selected" : ""}>${escapeHtml(t("CODEX.RuleModeAll"))}</option>
+              <option value="any" ${current.conditionMode === "any" ? "selected" : ""}>${escapeHtml(t("CODEX.RuleModeAny"))}</option>
             </select>
           </div>
           <div id="rule-conditions">
             ${current.conditions.map((c, i) => this._conditionRowHTML(c, i)).join("")}
           </div>
           <button type="button" id="add-condition" class="codex-btn codex-btn-dialog">
-            + Add Condition
+            ${escapeHtml(t("CODEX.RuleAddCondition"))}
           </button>
+          <div class="rule-preview">
+            <label>${escapeHtml(t("CODEX.RulePreview"))}</label>
+            <div id="rule-preview-list" class="rule-preview-list"></div>
+          </div>
         </div>
       `,
       render: (_event: Event, dialog: { element: HTMLElement }) => {
-        this._wireDialog(dialog.element)
+        this._wireDialog(dialog.element, current)
       },
       ok: {
-        label: "Save",
+        label: t("CODEX.Save"),
         callback: (_e: Event, _btn: HTMLButtonElement, dialog: { element: HTMLElement }) =>
           this._readForm(dialog.element),
       },
@@ -66,18 +75,52 @@ export class RuleEditorDialog {
     return { ...current, ...result }
   }
 
-  private static _wireDialog(el: HTMLElement): void {
+  private static _wireDialog(el: HTMLElement, current: EpithetRule): void {
+    const refreshPreview = () => {
+      const draft = { ...current, ...this._readForm(el) }
+      this._updatePreview(el, draft)
+    }
+
     el.querySelector("#add-condition")?.addEventListener("click", (e) => {
       e.preventDefault()
       this._addConditionRow(el)
+      refreshPreview()
     })
 
     el.querySelectorAll(".remove-condition").forEach(btn => {
       btn.addEventListener("click", (e) => {
         e.preventDefault()
         btn.closest(".rule-condition-row")?.remove()
+        refreshPreview()
       })
     })
+
+    el.querySelectorAll("input, select").forEach(input => {
+      input.addEventListener("change", refreshPreview)
+      input.addEventListener("input", refreshPreview)
+    })
+
+    refreshPreview()
+  }
+
+  private static _updatePreview(el: HTMLElement, rule: EpithetRule): void {
+    const container = el.querySelector("#rule-preview-list")
+    if (!container) return
+
+    const actors = (game.actors?.contents ?? []).filter(a => a.hasPlayerOwner)
+    const matches: string[] = []
+
+    for (const actor of actors) {
+      if (rule.scope === "actor" && rule.actorId && actor.id !== rule.actorId) continue
+      const record = getRecord(actor)
+      if (RuleEngine.evaluateRule(record.stats, rule)) {
+        matches.push(actor.name ?? actor.id ?? "")
+      }
+    }
+
+    container.innerHTML = matches.length
+      ? matches.map(name => `<span class="rule-preview-chip">${escapeHtml(name)}</span>`).join("")
+      : `<span class="rule-preview-empty">${escapeHtml(t("CODEX.RulePreviewNone"))}</span>`
   }
 
   private static _addConditionRow(el: HTMLElement): void {
@@ -98,8 +141,8 @@ export class RuleEditorDialog {
     return `
       <div class="rule-condition-row">
         <select class="cond-stat codex-rule-input">
-          ${STATS.map(s =>
-            `<option value="${s}" ${c.stat === s ? "selected" : ""}>${s}</option>`
+          ${STAT_KEYS.map(s =>
+            `<option value="${s}" ${c.stat === s ? "selected" : ""}>${escapeHtml(localizeStat(s))}</option>`
           ).join("")}
         </select>
         <select class="cond-op codex-rule-input">

@@ -1,7 +1,11 @@
+import { getDefaultTags } from "../../constants"
 import type { JournalEntry } from "../../types"
 
+const escapeHtml = (value: string): string =>
+  foundry.utils.escapeHTML(value)
+
 export class JournalEntryDialog {
-  static async create(actorId: string): Promise<Omit<JournalEntry, "id" | "createdAt"> | null> {
+  static async create(): Promise<Omit<JournalEntry, "id" | "createdAt"> | null> {
     return this._open({
       title: game.i18n?.localize("CODEX.NewEntryTitle") || "",
       initialTitle: "",
@@ -25,28 +29,41 @@ export class JournalEntryDialog {
     initialContent: string
     initialTags: string
   }): Promise<Omit<JournalEntry, "id" | "createdAt"> | null> {
+    const tagChips = getDefaultTags().map(tag =>
+      `<button type="button" class="entry-tag-suggest" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`
+    ).join("")
+
     const result = await foundry.applications.api.DialogV2.prompt({
       window: { title: opts.title },
       content: `
-        <div style="display:flex;flex-direction:column;gap:8px;padding:8px">
+        <div class="codex-entry-editor">
           <input id="entry-title" type="text"
-            value="${opts.initialTitle}"
-            placeholder="${game.i18n?.localize("CODEX.EntryTitlePlaceholder") || ""}"
-            style="width:100%"/>
-          <textarea id="entry-content" rows="6"
-            placeholder="${game.i18n?.localize("CODEX.EntryContentPlaceholder") || ""}"
-            style="width:100%;resize:vertical">${opts.initialContent}</textarea>
+            value="${escapeHtml(opts.initialTitle)}"
+            placeholder="${escapeHtml(game.i18n?.localize("CODEX.EntryTitlePlaceholder") || "")}"/>
+          <textarea id="entry-content" rows="8"
+            placeholder="${escapeHtml(game.i18n?.localize("CODEX.EntryContentPlaceholder") || "")}">${escapeHtml(opts.initialContent)}</textarea>
+          <p class="entry-markdown-hint">${game.i18n?.localize("CODEX.EntryMarkdownHint") || ""}</p>
           <div>
-            <label style="font-size:12px;color:#aaa">
-              ${game.i18n?.localize("CODEX.EntryTagsLabel") || ""}
-            </label>
+            <label class="entry-tags-label">${game.i18n?.localize("CODEX.EntryTagsLabel") || ""}</label>
+            <div class="entry-tag-suggestions">${tagChips}</div>
             <input id="entry-tags" type="text"
-              value="${opts.initialTags}"
-              placeholder="${game.i18n?.localize("CODEX.EntryTagsPlaceholder") || ""}"
-              style="width:100%"/>
+              value="${escapeHtml(opts.initialTags)}"
+              placeholder="${escapeHtml(game.i18n?.localize("CODEX.EntryTagsPlaceholder") || "")}"/>
           </div>
         </div>
       `,
+      render: (_event: Event, dialog: { element: HTMLElement }) => {
+        dialog.element.querySelectorAll(".entry-tag-suggest").forEach(btn => {
+          btn.addEventListener("click", (e) => {
+            e.preventDefault()
+            const input = dialog.element.querySelector("#entry-tags") as HTMLInputElement
+            const tag = (btn as HTMLElement).dataset.tag ?? ""
+            const current = input.value.split(",").map(t => t.trim()).filter(Boolean)
+            if (!current.includes(tag)) current.push(tag)
+            input.value = current.join(", ")
+          })
+        })
+      },
       ok: {
         label: game.i18n?.localize("CODEX.EntrySave") || "",
         callback: (_e: Event, _btn: HTMLButtonElement, dialog: any) => {

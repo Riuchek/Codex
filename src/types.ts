@@ -1,13 +1,16 @@
+export interface CombatStats {
+  damageDealt: number
+  damageTaken: number
+  criticals: number
+  criticalFails: number
+  killCount: number
+}
+
 export interface ActorRecord {
   name: string
   img: string
-  stats: {
-    damageDealt: number
-    damageTaken: number
-    criticals: number
-    criticalFails: number
-    killCount: number
-  }
+  stats: CombatStats
+  sessionStats: CombatStats
   epithets: Epithet[]
   journal: JournalEntry[]
 }
@@ -28,7 +31,7 @@ export interface JournalEntry {
   tags: string[]
 }
 
-export type StatKey = "killCount" | "criticals" | "criticalFails" | "damageDealt" | "damageTaken"
+export type StatKey = keyof CombatStats
 export type Operator = ">=" | "<=" | "==" | ">" | "<"
 export type ConditionMode = "all" | "any"
 
@@ -54,3 +57,17 @@ export interface CodexSettings {
   attackFlavor: string
   rules: EpithetRule[]
 }
+
+export interface CodexExport {
+  version: string
+  exportedAt: number
+  actors: Record<string, ActorRecord>
+}
+
+export const STAT_KEYS: StatKey[] = [
+  "killCount",
+  "criticals",
+  "criticalFails",
+  "damageDealt",
+  "damageTaken",
+]

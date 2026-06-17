@@ -4,11 +4,14 @@ import {
   saveRule,
   saveSettings,
 } from "../../data/SettingsManager"
+import { buildExport, downloadExport, pickAndImport } from "../../data/importExport"
 import { RuleEditorDialog } from "../dialogs/RuleEditorDialog"
 import type { CodexSettings, EpithetRule } from "../../types"
 
 const escapeHtml = (value: string): string =>
   foundry.utils.escapeHTML(value)
+
+const t = (key: string) => game.i18n?.localize(key) ?? key
 
 function formatConditions(rule: EpithetRule): string {
   return rule.conditions
@@ -53,9 +56,9 @@ export class SettingsPanel {
       )
 
       panel.querySelector(".settings-global-rules-list")!.innerHTML =
-        renderRulesList(globalRules, "No global rules yet.")
+        renderRulesList(globalRules, t("CODEX.NoGlobalRules"))
       panel.querySelector(".settings-actor-rules-list")!.innerHTML =
-        renderRulesList(actorRules, "No rules for this character yet.")
+        renderRulesList(actorRules, t("CODEX.NoActorRules"))
 
       this._syncSystemInputs(panel, settings)
     })
@@ -88,6 +91,18 @@ export class SettingsPanel {
       case "delete-rule":
         await this._deleteRule(root, target.dataset.ruleId ?? "")
         break
+      case "export-data":
+        downloadExport(buildExport())
+        ui.notifications?.info(`Codex | ${t("CODEX.ExportDone")}`)
+        break
+      case "import-data": {
+        const count = await pickAndImport()
+        if (count > 0) {
+          ui.notifications?.info(`Codex | ${game.i18n?.format("CODEX.ImportDone", { count: count.toString() }) || ""}`)
+          root.dispatchEvent(new CustomEvent("codex-import-done", { bubbles: true }))
+        }
+        break
+      }
     }
   }
 
@@ -99,7 +114,7 @@ export class SettingsPanel {
 
     await saveSettings({ hpPath, attackFlavor })
     this.refresh(root)
-    ui.notifications?.info("Codex | Settings saved.")
+    ui.notifications?.info(`Codex | ${t("CODEX.SettingsSaved")}`)
   }
 
   private static async _saveNewRule(root: HTMLElement, actorId: string | null): Promise<void> {
@@ -107,7 +122,7 @@ export class SettingsPanel {
     if (!rule) return
     await saveRule(rule)
     this.refresh(root)
-    ui.notifications?.info("Codex | Rule saved.")
+    ui.notifications?.info(`Codex | ${t("CODEX.RuleSaved")}`)
   }
 
   private static async _editRule(root: HTMLElement, ruleId: string): Promise<void> {
@@ -117,17 +132,17 @@ export class SettingsPanel {
     if (!rule) return
     await saveRule(rule)
     this.refresh(root)
-    ui.notifications?.info("Codex | Rule saved.")
+    ui.notifications?.info(`Codex | ${t("CODEX.RuleSaved")}`)
   }
 
   private static async _deleteRule(root: HTMLElement, ruleId: string): Promise<void> {
     const confirmed = await foundry.applications.api.DialogV2.confirm({
-      window:  { title: "Delete Rule" },
-      content: "<p>Delete this epithet rule? Characters who earned it will keep their epithet.</p>",
+      window:  { title: t("CODEX.DeleteRuleTitle") },
+      content: `<p>${escapeHtml(t("CODEX.DeleteRuleContent"))}</p>`,
     })
     if (!confirmed) return
     await deleteRule(ruleId)
     this.refresh(root)
-    ui.notifications?.info("Codex | Rule deleted.")
+    ui.notifications?.info(`Codex | ${t("CODEX.RuleDeleted")}`)
   }
 }

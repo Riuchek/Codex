@@ -5,17 +5,19 @@ import { StatsPanel }    from "./panels/StatsPanel"
 import { JournalPanel }  from "./panels/JournalPanel"
 import { EpithetsPanel } from "./panels/EpithetsPanel"
 import { SettingsPanel } from "./panels/SettingsPanel"
+import { DashboardPanel } from "./panels/DashboardPanel"
 import type { ActorRecord, EpithetRule, CodexSettings } from "../types"
 
 export interface CodexAppState {
   activeActorId: string
   activeTab: string
+  view: "actors" | "dashboard"
 }
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
 export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
-  private _state: CodexAppState = { activeActorId: "", activeTab: "stats" }
+  private _state: CodexAppState = { activeActorId: "", activeTab: "stats", view: "actors" }
   private _hookId: number = -1
   private _settingsHookId: number = -1
   private _abortController: AbortController | null = null
@@ -23,7 +25,7 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
   static override DEFAULT_OPTIONS = {
     id: "codex-app",
     window: { title: "Codex", resizable: true },
-    position: { width: 720, height: 560 },
+    position: { width: 900, height: 600 },
   }
 
   static override PARTS = {
@@ -43,38 +45,58 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
         actorRules: settings.rules.filter(r => r.scope === "actor" && r.actorId === a.id),
       }))
 
-    // ensure all actors have a record initialized
     await Promise.all(
       (game.actors?.contents ?? [])
         .filter(a => a.hasPlayerOwner)
         .map(a => initRecord(a))
     )
 
-    return { actors, isGM: game.user?.isGM ?? false, settings, globalRules }
+    return {
+      actors,
+      isGM: game.user?.isGM ?? false,
+      settings,
+      globalRules,
+      dashboardHtml: DashboardPanel.render(actors),
+    }
   }
 
   override async _onRender(context: object, options: object): Promise<void> {
     await super._onRender(context, options)
 
-    // abort previous listeners cleanly
     this._abortController?.abort()
     this._abortController = new AbortController()
     const { signal } = this._abortController
 
-    // restore or select first actor
-    const targetId = this._state.activeActorId ||
-      (this.element.querySelector(".codex-actor-item") as HTMLElement)?.dataset.actorId || ""
-    this._selectActor(targetId)
+    if (this._state.view === "dashboard") {
+      this._showDashboard()
+    } else {
+      const targetId = this._state.activeActorId ||
+        (this.element.querySelector(".codex-actor-item") as HTMLElement)?.dataset.actorId || ""
+      this._showActors()
+      this._selectActor(targetId)
+    }
 
-    // actor selection
     this.element.querySelectorAll(".codex-actor-item").forEach(el => {
       el.addEventListener("click", () => {
+        this._state.view = "actors"
         this._state.activeTab = "stats"
+        this._showActors()
         this._selectActor((el as HTMLElement).dataset.actorId ?? "")
       }, { signal })
     })
 
-    // tab switching
+    this.element.querySelector("[data-action='open-dashboard']")?.addEventListener("click", () => {
+      this._state.view = "dashboard"
+      DashboardPanel.refresh(this.element)
+      this._showDashboard()
+    }, { signal })
+
+    this.element.addEventListener("codex-close-dashboard", () => {
+      this._state.view = "actors"
+      this._showActors()
+      this._selectActor(this._state.activeActorId)
+    }, { signal })
+
     this.element.querySelectorAll(".codex-tab").forEach(el => {
       el.addEventListener("click", () => {
         const tab    = (el as HTMLElement).dataset.tab ?? ""
@@ -83,14 +105,24 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
       }, { signal })
     })
 
-    // activate panels
+    this.element.addEventListener("codex-import-done", () => {
+      void this.render()
+    }, { signal })
+
     StatsPanel.activate(this.element, this._state, signal)
     JournalPanel.activate(this.element, signal)
     EpithetsPanel.activate(this.element, signal)
-    if (game.user?.isGM) SettingsPanel.activate(this.element, signal)
+    if (game.user?.isGM) {
+      SettingsPanel.activate(this.element, signal)
+      DashboardPanel.activate(this.element, signal)
+    }
 
     if (this._hookId !== -1) Hooks.off("updateActor" as any, this._hookId)
     this._hookId = Hooks.on("updateActor" as any, (actor: Actor) => {
+      if (this._state.view === "dashboard") {
+        DashboardPanel.refresh(this.element)
+        return
+      }
       if (this._state.activeTab === "settings") {
         this._patchActorView(actor.id ?? "")
         return
@@ -110,6 +142,18 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this._abortController?.abort()
     if (this._hookId !== -1) Hooks.off("updateActor" as any, this._hookId)
     if (this._settingsHookId !== -1) Hooks.off("clientSettingChanged" as any, this._settingsHookId)
+  }
+
+  private _showDashboard(): void {
+    this.element.querySelector(".codex-main")?.setAttribute("style", "display:none")
+    this.element.querySelector(".codex-dashboard-container")?.setAttribute("style", "display:block")
+    this.element.querySelectorAll(".codex-actor-item").forEach(el => el.classList.remove("active"))
+  }
+
+  private _showActors(): void {
+    this.element.querySelector(".codex-main")?.setAttribute("style", "display:block")
+    const dash = this.element.querySelector(".codex-dashboard-container")
+    if (dash) dash.setAttribute("style", "display:none")
   }
 
   private _patchActorView(actorId: string): void {

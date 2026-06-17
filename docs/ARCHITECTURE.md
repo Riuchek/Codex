@@ -2,7 +2,7 @@
 
 This document describes the internal architecture of the Codex module for Foundry VTT. It is intended for developers, contributors, and AI models working on this codebase.
 
-**Current version:** 0.2.0
+**Current version:** 0.3.0
 
 ---
 
@@ -60,16 +60,21 @@ codex/
 │   │   ├── ActorRecord.ts      # CRUD for per-actor flags (update queue)
 │   │   ├── SettingsManager.ts  # CRUD for module-level settings
 │   │   ├── rollUtils.ts        # Dice/roll parsing — no Foundry side effects
-│   │   └── hooks.ts            # Foundry event listeners
+│   │   ├── hooks.ts            # Foundry event listeners
+│   │   ├── updateQueue.ts      # Per-actor write serialization
+│   │   └── importExport.ts     # JSON backup/restore
 │   ├── engine/
 │   │   └── RuleEngine.ts       # Pure epithet rule evaluation
+│   ├── utils/
+│   │   └── markdown.ts         # Lightweight markdown renderer for journal
 │   └── ui/
 │       ├── CodexApp.ts         # ApplicationV2 — shell, tabs, re-render
 │       ├── panels/
 │       │   ├── StatsPanel.ts
 │       │   ├── JournalPanel.ts
 │       │   ├── EpithetsPanel.ts
-│       │   └── SettingsPanel.ts
+│       │   ├── SettingsPanel.ts
+│       │   └── DashboardPanel.ts
 │       └── dialogs/
 │           ├── RuleEditorDialog.ts
 │           └── JournalEntryDialog.ts
@@ -103,12 +108,13 @@ The core data model:
 ActorRecord        // Everything stored per-actor via Foundry flags
   ├── name         // Synced from actor.name
   ├── img          // Synced from actor.img
-  ├── stats        // Combat statistics (all numbers, start at 0)
+  ├── stats        // Combat statistics — cumulative (epithet rules use these)
   │   ├── damageDealt
   │   ├── damageTaken
   │   ├── criticals
   │   ├── criticalFails
   │   └── killCount      // Manual only — not auto-captured
+  ├── sessionStats // Same shape as stats — auto-tracked per session
   ├── epithets     // Array of Epithet
   └── journal      // Array of JournalEntry
 
@@ -167,8 +173,13 @@ updateRecord(actor, patch)
 // Goes through the update queue.
 
 updateStats(actor, patch)
-// Merges patch into stats, then runs RuleEngine.apply to
-// recalculate automatic epithets. Goes through the update queue.
+// Updates cumulative stats only (manual edits). Runs RuleEngine.
+
+incrementStats(actor, delta)
+// Increments both sessionStats and stats. Used by hooks. Runs RuleEngine.
+
+resetSessionStats(actor) / resetAllStats(actor)
+// Session reset zeros sessionStats only. Full reset zeros both and removes auto epithets.
 ```
 
 **Update Queue pattern:**
@@ -181,6 +192,15 @@ update A ──► update B ──► update C
 ```
 
 This prevents the lost-update problem where two reads happen before either write completes.
+
+### importExport (`src/data/importExport.ts`)
+
+```ts
+buildExport()       // Collect all player-owned ActorRecords into CodexExport JSON
+importData(data)    // Merge imported records onto matching actors by ID
+downloadExport()    // Trigger browser download
+pickAndImport()     // File picker → import
+```
 
 ### rollUtils (`src/data/rollUtils.ts`)
 
@@ -440,7 +460,7 @@ Most user-facing strings use `game.i18n.localize("CODEX.Key")` in TypeScript and
 
 For strings with variables, use `game.i18n.format("CODEX.Key", { variable: value })`.
 
-**Exception:** `RuleEditorDialog` strings are hardcoded in English and not yet in the lang files.
+**Exception:** none as of 0.3.0 — rule editor strings are in `lang/*.json`.
 
 ---
 
@@ -503,9 +523,7 @@ https://github.com/Riuchek/Codex/releases/latest/download/module.json
 
 3. **`getRecord` returns an empty default when no flag exists** — callers that need persisted data must call `initRecord` first (CodexApp does this in `_prepareContext`; hooks assume records exist for tracked actors).
 
-4. **Rule editor is not i18n'd** — dialog labels and stat names are hardcoded in English.
-
-5. **Dead code in `constants.ts`** — `DEFAULT_TAGS` is defined but unused; journal tags are free-form only.
+4. **Legacy records without `sessionStats`** — `normalizeRecord()` backfills zeros on read. Existing worlds migrate automatically.
 
 ---
 
@@ -520,22 +538,22 @@ https://github.com/Riuchek/Codex/releases/latest/download/module.json
 - [x] Extract roll/dice logic into `rollUtils.ts`
 - [x] Surface update queue failures via `ui.notifications.error`
 - [x] SettingsPanel: refresh only the settings panel instead of full Codex re-render
-- [ ] Remove unused `DEFAULT_TAGS` from `constants.ts` (or wire it into journal UI)
+- [x] Extract `UpdateQueue` into testable module
 
 ### Features
 - [x] Rule editor: `+ Add Condition` button working inside the dialog
-- [ ] Rule editor: i18n for dialog strings
-- [ ] Rule editor: live preview of which actors currently match a rule
-- [ ] Journal: search/filter entries by tag
-- [ ] Journal: rich text support (markdown or Foundry's ProseMirror)
-- [ ] Stats: session-based tracking (reset per session, keep cumulative totals)
-- [ ] Import/export Codex data as JSON
-- [ ] GM dashboard: all characters side by side for comparison
+- [x] Rule editor: i18n for dialog strings
+- [x] Rule editor: live preview of which actors currently match a rule
+- [x] Journal: search/filter entries by tag
+- [x] Journal: markdown rendering for entry content
+- [x] Stats: session-based tracking (reset per session, keep cumulative totals)
+- [x] Import/export Codex data as JSON
+- [x] GM dashboard: all characters side by side for comparison
 
 ### Testing
-- [ ] Unit tests for `RuleEngine` (pure logic, no Foundry dependency)
-- [ ] Unit tests for `getNestedValue`
-- [ ] Integration tests for `ActorRecord` update queue behavior
+- [x] Unit tests for `RuleEngine` (pure logic, no Foundry dependency)
+- [x] Unit tests for `getNestedValue`
+- [x] Unit tests for `UpdateQueue` serialization behavior
 
 ### Publishing
 - [ ] Submit to the official Foundry VTT module repository

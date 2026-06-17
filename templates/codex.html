@@ -7,7 +7,16 @@
       <span>{{this.record.name}}</span>
     </div>
     {{/each}}
+    {{#if isGM}}
+    <button type="button" class="codex-btn codex-dashboard-btn" data-action="open-dashboard">
+      {{localize "CODEX.TabDashboard"}}
+    </button>
+    {{/if}}
   </aside>
+
+  <div class="codex-dashboard-container" style="display:none">
+    {{{dashboardHtml}}}
+  </div>
 
   <main class="codex-main">
     {{#each actors}}
@@ -18,57 +27,64 @@
         <a class="codex-tab" data-tab="journal">{{localize "CODEX.TabJournal"}}</a>
         <a class="codex-tab" data-tab="epithets">{{localize "CODEX.TabEpithets"}}</a>
         {{#if @root.isGM}}
-        <a class="codex-tab" data-tab="settings">Settings</a>
+        <a class="codex-tab" data-tab="settings">{{localize "CODEX.TabSettings"}}</a>
         {{/if}}
       </nav>
 
-    
       <section class="codex-panel" data-panel="stats">
         <ul class="codex-stats">
           <li>
             <span>{{localize "CODEX.StatDamageDealt"}}</span>
             <div class="stat-value-group">
-              <strong class="stat-display">{{this.record.stats.damageDealt}}</strong>
+              <span class="stat-session">{{localize "CODEX.StatSession"}}: <span class="stat-session-value">{{this.record.sessionStats.damageDealt}}</span></span>
+              <span class="stat-total">{{localize "CODEX.StatTotal"}}: <strong class="stat-display">{{this.record.stats.damageDealt}}</strong></span>
               <input class="stat-input" type="number" value="{{this.record.stats.damageDealt}}" style="display:none" min="0"/>
-              <button class="codex-btn-icon stat-edit" data-stat="damageDealt" data-actor-id="{{this.id}}" title="Editar">✎</button>
+              <button class="codex-btn-icon stat-edit" data-stat="damageDealt" data-actor-id="{{this.id}}">✎</button>
             </div>
           </li>
           <li>
             <span>{{localize "CODEX.StatDamageTaken"}}</span>
             <div class="stat-value-group">
-              <strong class="stat-display">{{this.record.stats.damageTaken}}</strong>
+              <span class="stat-session">{{localize "CODEX.StatSession"}}: <span class="stat-session-value">{{this.record.sessionStats.damageTaken}}</span></span>
+              <span class="stat-total">{{localize "CODEX.StatTotal"}}: <strong class="stat-display">{{this.record.stats.damageTaken}}</strong></span>
               <input class="stat-input" type="number" value="{{this.record.stats.damageTaken}}" style="display:none" min="0"/>
-              <button class="codex-btn-icon stat-edit" data-stat="damageTaken" data-actor-id="{{this.id}}" title="Editar">✎</button>
+              <button class="codex-btn-icon stat-edit" data-stat="damageTaken" data-actor-id="{{this.id}}">✎</button>
             </div>
           </li>
           <li>
             <span>{{localize "CODEX.StatCriticals"}}</span>
             <div class="stat-value-group">
-              <strong class="stat-display">{{this.record.stats.criticals}}</strong>
+              <span class="stat-session">{{localize "CODEX.StatSession"}}: <span class="stat-session-value">{{this.record.sessionStats.criticals}}</span></span>
+              <span class="stat-total">{{localize "CODEX.StatTotal"}}: <strong class="stat-display">{{this.record.stats.criticals}}</strong></span>
               <input class="stat-input" type="number" value="{{this.record.stats.criticals}}" style="display:none" min="0"/>
-              <button class="codex-btn-icon stat-edit" data-stat="criticals" data-actor-id="{{this.id}}" title="Editar">✎</button>
+              <button class="codex-btn-icon stat-edit" data-stat="criticals" data-actor-id="{{this.id}}">✎</button>
             </div>
           </li>
           <li>
             <span>{{localize "CODEX.StatCriticalFails"}}</span>
             <div class="stat-value-group">
-              <strong class="stat-display">{{this.record.stats.criticalFails}}</strong>
+              <span class="stat-session">{{localize "CODEX.StatSession"}}: <span class="stat-session-value">{{this.record.sessionStats.criticalFails}}</span></span>
+              <span class="stat-total">{{localize "CODEX.StatTotal"}}: <strong class="stat-display">{{this.record.stats.criticalFails}}</strong></span>
               <input class="stat-input" type="number" value="{{this.record.stats.criticalFails}}" style="display:none" min="0"/>
-              <button class="codex-btn-icon stat-edit" data-stat="criticalFails" data-actor-id="{{this.id}}" title="Editar">✎</button>
+              <button class="codex-btn-icon stat-edit" data-stat="criticalFails" data-actor-id="{{this.id}}">✎</button>
             </div>
           </li>
           <li>
             <span>{{localize "CODEX.StatKillCount"}}</span>
             <div class="stat-value-group">
-              <strong class="stat-display">{{this.record.stats.killCount}}</strong>
+              <span class="stat-session">{{localize "CODEX.StatSession"}}: <span class="stat-session-value">{{this.record.sessionStats.killCount}}</span></span>
+              <span class="stat-total">{{localize "CODEX.StatTotal"}}: <strong class="stat-display">{{this.record.stats.killCount}}</strong></span>
               <input class="stat-input" type="number" value="{{this.record.stats.killCount}}" style="display:none" min="0"/>
-              <button class="codex-btn-icon stat-edit" data-stat="killCount" data-actor-id="{{this.id}}" title="Editar">✎</button>
+              <button class="codex-btn-icon stat-edit" data-stat="killCount" data-actor-id="{{this.id}}">✎</button>
             </div>
           </li>
         </ul>
 
         {{#if @root.isGM}}
         <div class="codex-reset-area">
+          <button class="codex-btn" data-action="reset-session" data-actor-id="{{this.id}}">
+            {{localize "CODEX.ResetSession"}}
+          </button>
           <button class="codex-btn codex-btn-danger" data-action="reset-stats" data-actor-id="{{this.id}}">
             {{localize "CODEX.ResetStats"}}
           </button>
@@ -76,9 +92,29 @@
         {{/if}}
       </section>
 
-     
       <section class="codex-panel" data-panel="journal" style="display:none">
-        <div class="codex-journal-header">
+        <div class="codex-journal-header" data-journal-toolbar="{{this.id}}">
+          <input class="codex-input journal-search" type="search"
+            data-actor-id="{{this.id}}"
+            placeholder="{{localize "CODEX.JournalSearch"}}"/>
+          <div class="journal-tag-filters">
+            <button type="button" class="journal-tag-chip journal-tag-all active"
+              data-action="journal-filter-all" data-actor-id="{{this.id}}">
+              {{localize "CODEX.JournalFilterAll"}}
+            </button>
+            <button type="button" class="journal-tag-chip"
+              data-action="journal-tag-filter" data-actor-id="{{this.id}}"
+              data-tag="{{localize "CODEX.TagCombat"}}">{{localize "CODEX.TagCombat"}}</button>
+            <button type="button" class="journal-tag-chip"
+              data-action="journal-tag-filter" data-actor-id="{{this.id}}"
+              data-tag="{{localize "CODEX.TagNpc"}}">{{localize "CODEX.TagNpc"}}</button>
+            <button type="button" class="journal-tag-chip"
+              data-action="journal-tag-filter" data-actor-id="{{this.id}}"
+              data-tag="{{localize "CODEX.TagSecret"}}">{{localize "CODEX.TagSecret"}}</button>
+            <button type="button" class="journal-tag-chip"
+              data-action="journal-tag-filter" data-actor-id="{{this.id}}"
+              data-tag="{{localize "CODEX.TagReminder"}}">{{localize "CODEX.TagReminder"}}</button>
+          </div>
           <button class="codex-btn" data-action="new-entry" data-actor-id="{{this.id}}">
             {{localize "CODEX.NewEntry"}}
           </button>
@@ -93,7 +129,7 @@
                 <button class="codex-btn-icon" data-action="delete-entry" data-entry-id="{{this.id}}" data-actor-id="{{../id}}">🗑️</button>
               </div>
             </div>
-            <p class="codex-entry-content">{{this.content}}</p>
+            <div class="codex-entry-content">{{this.content}}</div>
             <div class="codex-entry-tags">
               {{#each this.tags}}
               <span class="codex-tag">{{this}}</span>
@@ -106,7 +142,6 @@
         </div>
       </section>
 
-    
       <section class="codex-panel" data-panel="epithets" style="display:none">
         <div class="codex-epithets-header">
           <input class="codex-input" type="text" placeholder='{{localize "CODEX.EpithetPlaceholder"}}' data-actor-id="{{this.id}}" />
@@ -128,78 +163,86 @@
         </div>
       </section>
 
-        {{#if @root.isGM}}
-        <section class="codex-panel codex-settings-panel" data-panel="settings" style="display:none">
+      {{#if @root.isGM}}
+      <section class="codex-panel codex-settings-panel" data-panel="settings" style="display:none">
 
-          <div class="settings-group">
-            <h3 class="settings-group-title">System</h3>
-            <div class="settings-row">
-              <label>{{localize "CODEX.SettingHpPath"}}</label>
-              <input class="codex-input" type="text" data-setting="hpPath" value="{{@root.settings.hpPath}}"/>
-            </div>
-            <div class="settings-row">
-              <label>{{localize "CODEX.SettingAttackFlavor"}}</label>
-              <input class="codex-input" type="text" data-setting="attackFlavor" value="{{@root.settings.attackFlavor}}"/>
-            </div>
-            <div class="settings-row">
-              <button class="codex-btn" data-action="save-system-settings">Save</button>
-            </div>
+        <div class="settings-group">
+          <h3 class="settings-group-title">{{localize "CODEX.SettingsSystem"}}</h3>
+          <div class="settings-row">
+            <label>{{localize "CODEX.SettingHpPath"}}</label>
+            <input class="codex-input" type="text" data-setting="hpPath" value="{{@root.settings.hpPath}}"/>
           </div>
+          <div class="settings-row">
+            <label>{{localize "CODEX.SettingAttackFlavor"}}</label>
+            <input class="codex-input" type="text" data-setting="attackFlavor" value="{{@root.settings.attackFlavor}}"/>
+          </div>
+          <div class="settings-row">
+            <button class="codex-btn" data-action="save-system-settings">{{localize "CODEX.Save"}}</button>
+          </div>
+        </div>
 
-          <div class="settings-group">
-            <h3 class="settings-group-title">
-              Global Epithet Rules
-              <button class="codex-btn" data-action="new-global-rule" data-actor-id="">+ Add Rule</button>
-            </h3>
-            <div class="settings-rules-list settings-global-rules-list">
-              {{#each @root.globalRules}}
-              <div class="settings-rule-row" data-rule-id="{{this.id}}">
-                <span class="rule-icon">{{this.icon}}</span>
-                <span class="rule-label" data-color="{{this.color}}">{{this.label}}</span>
-                <span class="rule-conditions">
-                  {{#each this.conditions}}
-                  {{this.stat}} {{this.operator}} {{this.threshold}}{{#unless @last}} {{../conditionMode}} {{/unless}}
-                  {{/each}}
-                </span>
-                <div class="rule-actions">
-                  <button class="codex-btn-icon" data-action="edit-rule" data-rule-id="{{this.id}}">✎</button>
-                  <button class="codex-btn-icon" data-action="delete-rule" data-rule-id="{{this.id}}">🗑️</button>
-                </div>
+        <div class="settings-group">
+          <h3 class="settings-group-title">
+            {{localize "CODEX.GlobalRules"}}
+            <button class="codex-btn" data-action="new-global-rule" data-actor-id="">+ {{localize "CODEX.AddRule"}}</button>
+          </h3>
+          <div class="settings-rules-list settings-global-rules-list">
+            {{#each @root.globalRules}}
+            <div class="settings-rule-row" data-rule-id="{{this.id}}">
+              <span class="rule-icon">{{this.icon}}</span>
+              <span class="rule-label" data-color="{{this.color}}">{{this.label}}</span>
+              <span class="rule-conditions">
+                {{#each this.conditions}}
+                {{this.stat}} {{this.operator}} {{this.threshold}}{{#unless @last}} {{../conditionMode}} {{/unless}}
+                {{/each}}
+              </span>
+              <div class="rule-actions">
+                <button class="codex-btn-icon" data-action="edit-rule" data-rule-id="{{this.id}}">✎</button>
+                <button class="codex-btn-icon" data-action="delete-rule" data-rule-id="{{this.id}}">🗑️</button>
               </div>
-              {{else}}
-              <p class="codex-empty">No global rules yet.</p>
-              {{/each}}
             </div>
+            {{else}}
+            <p class="codex-empty">{{localize "CODEX.NoGlobalRules"}}</p>
+            {{/each}}
           </div>
+        </div>
 
-          <div class="settings-group">
-            <h3 class="settings-group-title">
-              Rules for {{this.record.name}}
-              <button class="codex-btn" data-action="new-actor-rule" data-actor-id="{{this.id}}">+ Add Rule</button>
-            </h3>
-            <div class="settings-rules-list settings-actor-rules-list">
-              {{#each this.actorRules}}
-              <div class="settings-rule-row" data-rule-id="{{this.id}}">
-                <span class="rule-icon">{{this.icon}}</span>
-                <span class="rule-label" data-color="{{this.color}}">{{this.label}}</span>
-                <span class="rule-conditions">
-                  {{#each this.conditions}}
-                  {{this.stat}} {{this.operator}} {{this.threshold}}{{#unless @last}} {{../conditionMode}} {{/unless}}
-                  {{/each}}
-                </span>
-                <div class="rule-actions">
-                  <button class="codex-btn-icon" data-action="edit-rule" data-rule-id="{{this.id}}">✎</button>
-                  <button class="codex-btn-icon" data-action="delete-rule" data-rule-id="{{this.id}}">🗑️</button>
-                </div>
+        <div class="settings-group">
+          <h3 class="settings-group-title">
+            {{localize "CODEX.ActorRules"}} {{this.record.name}}
+            <button class="codex-btn" data-action="new-actor-rule" data-actor-id="{{this.id}}">+ {{localize "CODEX.AddRule"}}</button>
+          </h3>
+          <div class="settings-rules-list settings-actor-rules-list">
+            {{#each this.actorRules}}
+            <div class="settings-rule-row" data-rule-id="{{this.id}}">
+              <span class="rule-icon">{{this.icon}}</span>
+              <span class="rule-label" data-color="{{this.color}}">{{this.label}}</span>
+              <span class="rule-conditions">
+                {{#each this.conditions}}
+                {{this.stat}} {{this.operator}} {{this.threshold}}{{#unless @last}} {{../conditionMode}} {{/unless}}
+                {{/each}}
+              </span>
+              <div class="rule-actions">
+                <button class="codex-btn-icon" data-action="edit-rule" data-rule-id="{{this.id}}">✎</button>
+                <button class="codex-btn-icon" data-action="delete-rule" data-rule-id="{{this.id}}">🗑️</button>
               </div>
-              {{else}}
-              <p class="codex-empty">No rules for this character yet.</p>
-              {{/each}}
             </div>
+            {{else}}
+            <p class="codex-empty">{{localize "CODEX.NoActorRules"}}</p>
+            {{/each}}
           </div>
+        </div>
 
-        </section>
-        {{/if}}
+        <div class="settings-group">
+          <h3 class="settings-group-title">{{localize "CODEX.DataManagement"}}</h3>
+          <div class="settings-row settings-data-actions">
+            <button class="codex-btn" data-action="export-data">{{localize "CODEX.ExportData"}}</button>
+            <button class="codex-btn" data-action="import-data">{{localize "CODEX.ImportData"}}</button>
+          </div>
+        </div>
+
+      </section>
+      {{/if}}
     </div>
     {{/each}}
   </main>

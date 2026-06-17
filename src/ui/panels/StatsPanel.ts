@@ -1,6 +1,6 @@
-import { getRecord, updateStats, updateRecord } from "../../data/ActorRecord"
+import { getRecord, resetAllStats, resetSessionStats, updateStats } from "../../data/ActorRecord"
 import type { CodexAppState } from "../CodexApp"
-import type { ActorRecord } from "../../types"
+import type { ActorRecord, CombatStats } from "../../types"
 
 export class StatsPanel {
   static activate(root: HTMLElement, state: CodexAppState, signal: AbortSignal): void {
@@ -27,7 +27,7 @@ export class StatsPanel {
           const actor = game.actors?.get(actorId)
           if (!actor) return
           const current = getRecord(actor)
-          await updateStats(actor, { ...current.stats, [stat]: val })
+          await updateStats(actor, { ...current.stats, [stat]: val } as Partial<CombatStats>)
         }
 
         input.addEventListener("blur",    save, { once: true, signal })
@@ -54,28 +54,44 @@ export class StatsPanel {
         })
         if (!confirmed) return
 
-        const record = getRecord(actor)
-        await updateRecord(actor, {
-          stats:    { damageDealt: 0, damageTaken: 0, criticals: 0, criticalFails: 0, killCount: 0 },
-          epithets: record.epithets.filter(e => !e.auto),
+        await resetAllStats(actor)
+        this.refresh(root, actorId)
+      }, { signal })
+    })
+
+    root.querySelectorAll("[data-action='reset-session']").forEach(el => {
+      el.addEventListener("click", async () => {
+        const actorId = (el as HTMLElement).dataset.actorId ?? ""
+        const actor   = game.actors?.get(actorId)
+        if (!actor) return
+
+        const confirmed = await foundry.applications.api.DialogV2.confirm({
+          window:  { title: game.i18n?.localize("CODEX.ResetSessionTitle") || "" },
+          content: game.i18n?.format("CODEX.ResetSessionContent", { name: actor.name }) || "",
         })
+        if (!confirmed) return
+
+        await resetSessionStats(actor)
+        this.refresh(root, actorId)
       }, { signal })
     })
   }
 
   static refresh(root: HTMLElement, actorId: string, record?: ActorRecord): void {
-    const stats = record ?? getRecord(game.actors?.get(actorId)!)
+    const data = record ?? getRecord(game.actors?.get(actorId)!)
     const detail = root.querySelector(`[data-detail="${actorId}"]`)
     if (!detail) return
 
     detail.querySelectorAll(".stat-edit").forEach(el => {
-      const stat = (el as HTMLElement).dataset.stat as keyof ActorRecord["stats"] | undefined
+      const stat = (el as HTMLElement).dataset.stat as keyof CombatStats | undefined
       if (!stat) return
       const li = el.closest("li")
       const display = li?.querySelector(".stat-display")
+      const session = li?.querySelector(".stat-session-value")
       const input = li?.querySelector(".stat-input") as HTMLInputElement | null
-      if (display) display.textContent = String(stats.stats[stat])
-      if (input && document.activeElement !== input) input.value = String(stats.stats[stat])
+      if (display) display.textContent = String(data.stats[stat])
+      if (session) session.textContent = String(data.sessionStats[stat])
+      if (input && document.activeElement !== input) input.value = String(data.stats[stat])
     })
   }
 }

@@ -1,4 +1,4 @@
-import { getRecord, updateRecord, updateStats } from "./ActorRecord"
+import { getRecord, incrementStats, updateRecord } from "./ActorRecord"
 import { getSettings } from "./SettingsManager"
 import {
   getMessageRolls,
@@ -21,7 +21,6 @@ export function registerHooks() {
     const rolls = getMessageRolls(message)
     if (!rolls.length) return
 
-    const current = getRecord(actor)
     const attackFlavor = getSettings().attackFlavor
     const isAttack = matchesAttackFlavor(message, attackFlavor)
 
@@ -32,10 +31,10 @@ export function registerHooks() {
       const isCriticalFail = isD20CritFail(attackRoll)
       const damageDealt    = damageRoll?.total ?? 0
 
-      await updateStats(actor, {
-        criticals:     current.stats.criticals     + (isCritical ? 1 : 0),
-        criticalFails: current.stats.criticalFails + (isCriticalFail ? 1 : 0),
-        damageDealt:   current.stats.damageDealt   + damageDealt,
+      await incrementStats(actor, {
+        criticals:     isCritical ? 1 : 0,
+        criticalFails: isCriticalFail ? 1 : 0,
+        damageDealt,
       })
 
       if (isCritical) {
@@ -48,9 +47,9 @@ export function registerHooks() {
     const isCritical = isMaxOnMainDie(roll)
     const isCritFail = isNatural1OnMainDie(roll)
 
-    await updateStats(actor, {
-      criticals:     current.stats.criticals     + (isCritical ? 1 : 0),
-      criticalFails: current.stats.criticalFails + (isCritFail ? 1 : 0),
+    await incrementStats(actor, {
+      criticals:     isCritical ? 1 : 0,
+      criticalFails: isCritFail ? 1 : 0,
     })
 
     if (isCritical) {
@@ -73,10 +72,7 @@ export function registerHooks() {
     const delta = getHpDelta(actor, diff, getSettings().hpPath)
     if (delta === undefined) return
 
-    const current = getRecord(actor)
-    void updateStats(actor, {
-      damageTaken: current.stats.damageTaken + delta,
-    })
+    void incrementStats(actor, { damageTaken: delta })
   })
 }
 
