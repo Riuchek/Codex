@@ -36,8 +36,7 @@
           <li>
             <span>{{localize "CODEX.StatDamageDealt"}}</span>
             <div class="stat-value-group">
-              <span class="stat-session">{{localize "CODEX.StatSession"}}: <span class="stat-session-value">{{this.record.sessionStats.damageDealt}}</span></span>
-              <span class="stat-total">{{localize "CODEX.StatTotal"}}: <strong class="stat-display">{{this.record.stats.damageDealt}}</strong></span>
+              <strong class="stat-display">{{this.record.stats.damageDealt}}</strong>
               <input class="stat-input" type="number" value="{{this.record.stats.damageDealt}}" style="display:none" min="0"/>
               <button class="codex-btn-icon stat-edit" data-stat="damageDealt" data-actor-id="{{this.id}}">✎</button>
             </div>
@@ -45,8 +44,7 @@
           <li>
             <span>{{localize "CODEX.StatDamageTaken"}}</span>
             <div class="stat-value-group">
-              <span class="stat-session">{{localize "CODEX.StatSession"}}: <span class="stat-session-value">{{this.record.sessionStats.damageTaken}}</span></span>
-              <span class="stat-total">{{localize "CODEX.StatTotal"}}: <strong class="stat-display">{{this.record.stats.damageTaken}}</strong></span>
+              <strong class="stat-display">{{this.record.stats.damageTaken}}</strong>
               <input class="stat-input" type="number" value="{{this.record.stats.damageTaken}}" style="display:none" min="0"/>
               <button class="codex-btn-icon stat-edit" data-stat="damageTaken" data-actor-id="{{this.id}}">✎</button>
             </div>
@@ -54,8 +52,7 @@
           <li>
             <span>{{localize "CODEX.StatCriticals"}}</span>
             <div class="stat-value-group">
-              <span class="stat-session">{{localize "CODEX.StatSession"}}: <span class="stat-session-value">{{this.record.sessionStats.criticals}}</span></span>
-              <span class="stat-total">{{localize "CODEX.StatTotal"}}: <strong class="stat-display">{{this.record.stats.criticals}}</strong></span>
+              <strong class="stat-display">{{this.record.stats.criticals}}</strong>
               <input class="stat-input" type="number" value="{{this.record.stats.criticals}}" style="display:none" min="0"/>
               <button class="codex-btn-icon stat-edit" data-stat="criticals" data-actor-id="{{this.id}}">✎</button>
             </div>
@@ -63,8 +60,7 @@
           <li>
             <span>{{localize "CODEX.StatCriticalFails"}}</span>
             <div class="stat-value-group">
-              <span class="stat-session">{{localize "CODEX.StatSession"}}: <span class="stat-session-value">{{this.record.sessionStats.criticalFails}}</span></span>
-              <span class="stat-total">{{localize "CODEX.StatTotal"}}: <strong class="stat-display">{{this.record.stats.criticalFails}}</strong></span>
+              <strong class="stat-display">{{this.record.stats.criticalFails}}</strong>
               <input class="stat-input" type="number" value="{{this.record.stats.criticalFails}}" style="display:none" min="0"/>
               <button class="codex-btn-icon stat-edit" data-stat="criticalFails" data-actor-id="{{this.id}}">✎</button>
             </div>
@@ -72,8 +68,7 @@
           <li>
             <span>{{localize "CODEX.StatKillCount"}}</span>
             <div class="stat-value-group">
-              <span class="stat-session">{{localize "CODEX.StatSession"}}: <span class="stat-session-value">{{this.record.sessionStats.killCount}}</span></span>
-              <span class="stat-total">{{localize "CODEX.StatTotal"}}: <strong class="stat-display">{{this.record.stats.killCount}}</strong></span>
+              <strong class="stat-display">{{this.record.stats.killCount}}</strong>
               <input class="stat-input" type="number" value="{{this.record.stats.killCount}}" style="display:none" min="0"/>
               <button class="codex-btn-icon stat-edit" data-stat="killCount" data-actor-id="{{this.id}}">✎</button>
             </div>
@@ -82,9 +77,6 @@
 
         {{#if @root.isGM}}
         <div class="codex-reset-area">
-          <button class="codex-btn" data-action="reset-session" data-actor-id="{{this.id}}">
-            {{localize "CODEX.ResetSession"}}
-          </button>
           <button class="codex-btn codex-btn-danger" data-action="reset-stats" data-actor-id="{{this.id}}">
             {{localize "CODEX.ResetStats"}}
           </button>

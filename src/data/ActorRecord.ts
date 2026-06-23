@@ -16,7 +16,6 @@ export const EMPTY_RECORD = (): ActorRecord => ({
   name: "",
   img: "",
   stats: EMPTY_STATS(),
-  sessionStats: EMPTY_STATS(),
   epithets: [],
   journal: [],
 })
@@ -26,7 +25,6 @@ export function normalizeRecord(raw: Partial<ActorRecord>): ActorRecord {
   return {
     ...base,
     stats: { ...EMPTY_STATS(), ...raw.stats },
-    sessionStats: { ...EMPTY_STATS(), ...raw.sessionStats },
     epithets: raw.epithets ?? [],
     journal: raw.journal ?? [],
   }
@@ -66,7 +64,7 @@ export async function updateStats(
   return enqueue(actor, async () => {
     const current = getRecord(actor)
     const updatedStats = { ...current.stats, ...patch }
-    await writeStats(actor, current, updatedStats, current.sessionStats)
+    await writeStats(actor, current, updatedStats)
   })
 }
 
@@ -77,25 +75,18 @@ export async function incrementStats(
   return enqueue(actor, async () => {
     const current = getRecord(actor)
     const updatedStats = { ...current.stats }
-    const updatedSession = { ...current.sessionStats }
     for (const [key, value] of Object.entries(delta) as [keyof CombatStats, number][]) {
       if (value === undefined) continue
       updatedStats[key] += value
-      updatedSession[key] += value
     }
-    await writeStats(actor, current, updatedStats, updatedSession)
+    await writeStats(actor, current, updatedStats)
   })
-}
-
-export async function resetSessionStats(actor: Actor): Promise<void> {
-  return updateRecord(actor, { sessionStats: EMPTY_STATS() })
 }
 
 export async function resetAllStats(actor: Actor): Promise<void> {
   const current = getRecord(actor)
   await updateRecord(actor, {
     stats: EMPTY_STATS(),
-    sessionStats: EMPTY_STATS(),
     epithets: current.epithets.filter(e => !e.auto),
   })
 }
@@ -103,8 +94,7 @@ export async function resetAllStats(actor: Actor): Promise<void> {
 async function writeStats(
   actor: Actor,
   current: ActorRecord,
-  updatedStats: CombatStats,
-  updatedSession: CombatStats
+  updatedStats: CombatStats
 ): Promise<void> {
   const rules = getRules(actor.id ?? "")
   const { epithets, newlyUnlocked } = RuleEngine.apply(updatedStats, rules, current.epithets)
@@ -118,7 +108,6 @@ async function writeStats(
   await actor.setFlag(MODULE_ID as any, "record", {
     ...current,
     stats: updatedStats,
-    sessionStats: updatedSession,
     epithets,
   })
 }

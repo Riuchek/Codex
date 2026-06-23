@@ -16,16 +16,10 @@ export class DashboardPanel {
   }
 
   static render(actors: { id: string; record: ActorRecord }[]): string {
-    const sessionLabel = game.i18n?.localize("CODEX.StatSession") ?? "Session"
-    const totalLabel = game.i18n?.localize("CODEX.StatTotal") ?? "Total"
     const epithetsLabel = game.i18n?.localize("CODEX.TabEpithets") ?? "Epithets"
 
     const headers = STAT_KEYS.map(stat =>
-      `<th colspan="2">${escapeHtml(localizeStat(stat))}</th>`
-    ).join("")
-
-    const subHeaders = STAT_KEYS.map(() =>
-      `<th>${escapeHtml(sessionLabel)}</th><th>${escapeHtml(totalLabel)}</th>`
+      `<th>${escapeHtml(localizeStat(stat))}</th>`
     ).join("")
 
     const rows = actors.map(({ id, record }) => `
@@ -35,7 +29,6 @@ export class DashboardPanel {
           <span>${escapeHtml(record.name)}</span>
         </td>
         ${STAT_KEYS.map(stat => `
-          <td>${record.sessionStats[stat]}</td>
           <td><strong>${record.stats[stat]}</strong></td>
         `).join("")}
         <td>${record.epithets.length}</td>
@@ -54,11 +47,10 @@ export class DashboardPanel {
           <table class="codex-dashboard-table">
             <thead>
               <tr>
-                <th rowspan="2">${escapeHtml(game.i18n?.localize("CODEX.DashboardCharacter") ?? "Character")}</th>
+                <th>${escapeHtml(game.i18n?.localize("CODEX.DashboardCharacter") ?? "Character")}</th>
                 ${headers}
-                <th rowspan="2">${escapeHtml(epithetsLabel)}</th>
+                <th>${escapeHtml(epithetsLabel)}</th>
               </tr>
-              <tr>${subHeaders}</tr>
             </thead>
             <tbody>${rows}</tbody>
           </table>

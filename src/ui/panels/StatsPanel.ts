@@ -1,4 +1,4 @@
-import { getRecord, resetAllStats, resetSessionStats, updateStats } from "../../data/ActorRecord"
+import { getRecord, resetAllStats, updateStats } from "../../data/ActorRecord"
 import type { CodexAppState } from "../CodexApp"
 import type { ActorRecord, CombatStats } from "../../types"
 
@@ -58,23 +58,6 @@ export class StatsPanel {
         this.refresh(root, actorId)
       }, { signal })
     })
-
-    root.querySelectorAll("[data-action='reset-session']").forEach(el => {
-      el.addEventListener("click", async () => {
-        const actorId = (el as HTMLElement).dataset.actorId ?? ""
-        const actor   = game.actors?.get(actorId)
-        if (!actor) return
-
-        const confirmed = await foundry.applications.api.DialogV2.confirm({
-          window:  { title: game.i18n?.localize("CODEX.ResetSessionTitle") || "" },
-          content: game.i18n?.format("CODEX.ResetSessionContent", { name: actor.name }) || "",
-        })
-        if (!confirmed) return
-
-        await resetSessionStats(actor)
-        this.refresh(root, actorId)
-      }, { signal })
-    })
   }
 
   static refresh(root: HTMLElement, actorId: string, record?: ActorRecord): void {
@@ -87,10 +70,8 @@ export class StatsPanel {
       if (!stat) return
       const li = el.closest("li")
       const display = li?.querySelector(".stat-display")
-      const session = li?.querySelector(".stat-session-value")
       const input = li?.querySelector(".stat-input") as HTMLInputElement | null
       if (display) display.textContent = String(data.stats[stat])
-      if (session) session.textContent = String(data.sessionStats[stat])
       if (input && document.activeElement !== input) input.value = String(data.stats[stat])
     })
   }

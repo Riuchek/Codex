@@ -15,15 +15,6 @@ Codex is a Foundry VTT module for tracking the story your campaign leaves behind
 
 GMs also see a **Settings** tab to configure system paths, attack detection, epithet rules, and import/export data. A **Dashboard** button in the sidebar compares all characters side by side.
 
-### Session vs Total Statistics
-
-Each stat tracks two values:
-
-- **Session** — counters since the last session reset (auto-tracked from chat and HP)
-- **Total** — cumulative lifetime value (used for epithet rules)
-
-GMs can reset session counters without affecting totals, or reset everything.
-
 ### Expedition Journal
 
 ![Journal tab](docs/screenshot-journal.png)
@@ -71,7 +62,7 @@ GMs can create, edit, and delete rules — including per-actor rules with multip
 
 ### GM Dashboard
 
-Compare all player characters in one table: session and total stats side by side, plus epithet count. Open from the **Dashboard** button in the Codex sidebar.
+Compare all player characters in one table: stats and epithet count. Open from the **Dashboard** button in the Codex sidebar.
 
 ### Import / Export
 

@@ -10,15 +10,10 @@
   "CODEX.StatCriticals": "Críticos",
   "CODEX.StatCriticalFails": "Falhas críticas",
   "CODEX.StatKillCount": "Abates",
-  "CODEX.StatSession": "Sessão",
-  "CODEX.StatTotal": "Total",
 
   "CODEX.ResetStats": "Resetar tudo",
   "CODEX.ResetConfirmTitle": "Resetar estatísticas",
   "CODEX.ResetConfirmContent": "Tem certeza? Todas as estatísticas de <strong>{name}</strong> serão zeradas. Alcunhas automáticas também serão removidas.",
-  "CODEX.ResetSession": "Resetar sessão",
-  "CODEX.ResetSessionTitle": "Resetar estatísticas da sessão",
-  "CODEX.ResetSessionContent": "Resetar contadores de sessão de <strong>{name}</strong>? Os totais acumulados serão mantidos.",
 
   "CODEX.NewEntry": "+ Nova entrada",
   "CODEX.NewEntryTitle": "Nova entrada no diário",

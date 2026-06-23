@@ -114,7 +114,6 @@ ActorRecord        // Everything stored per-actor via Foundry flags
   │   ├── criticals
   │   ├── criticalFails
   │   └── killCount      // Manual only — not auto-captured
-  ├── sessionStats // Same shape as stats — auto-tracked per session
   ├── epithets     // Array of Epithet
   └── journal      // Array of JournalEntry
 
@@ -176,10 +175,10 @@ updateStats(actor, patch)
 // Updates cumulative stats only (manual edits). Runs RuleEngine.
 
 incrementStats(actor, delta)
-// Increments both sessionStats and stats. Used by hooks. Runs RuleEngine.
+// Increments stats. Used by hooks. Runs RuleEngine.
 
-resetSessionStats(actor) / resetAllStats(actor)
-// Session reset zeros sessionStats only. Full reset zeros both and removes auto epithets.
+resetAllStats(actor)
+// Zeros stats and removes auto epithets.
 ```
 
 **Update Queue pattern:**
@@ -523,8 +522,6 @@ https://github.com/Riuchek/Codex/releases/latest/download/module.json
 
 3. **`getRecord` returns an empty default when no flag exists** — callers that need persisted data must call `initRecord` first (CodexApp does this in `_prepareContext`; hooks assume records exist for tracked actors).
 
-4. **Legacy records without `sessionStats`** — `normalizeRecord()` backfills zeros on read. Existing worlds migrate automatically.
-
 ---
 
 ## Improvement Roadmap
@@ -546,7 +543,6 @@ https://github.com/Riuchek/Codex/releases/latest/download/module.json
 - [x] Rule editor: live preview of which actors currently match a rule
 - [x] Journal: search/filter entries by tag
 - [x] Journal: markdown rendering for entry content
-- [x] Stats: session-based tracking (reset per session, keep cumulative totals)
 - [x] Import/export Codex data as JSON
 - [x] GM dashboard: all characters side by side for comparison
 

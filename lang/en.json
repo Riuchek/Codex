@@ -10,15 +10,10 @@
   "CODEX.StatCriticals": "Critical Hits",
   "CODEX.StatCriticalFails": "Critical Fails",
   "CODEX.StatKillCount": "Kill Count",
-  "CODEX.StatSession": "Session",
-  "CODEX.StatTotal": "Total",
 
   "CODEX.ResetStats": "Reset All Statistics",
   "CODEX.ResetConfirmTitle": "Reset Statistics",
   "CODEX.ResetConfirmContent": "Are you sure? All statistics for <strong>{name}</strong> will be zeroed. Automatic epithets will also be removed.",
-  "CODEX.ResetSession": "Reset Session",
-  "CODEX.ResetSessionTitle": "Reset Session Statistics",
-  "CODEX.ResetSessionContent": "Reset session counters for <strong>{name}</strong>? Cumulative totals will be kept.",
 
   "CODEX.NewEntry": "+ New Entry",
   "CODEX.NewEntryTitle": "New Journal Entry",

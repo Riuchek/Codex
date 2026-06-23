@@ -10,7 +10,6 @@ export interface ActorRecord {
   name: string
   img: string
   stats: CombatStats
-  sessionStats: CombatStats
   epithets: Epithet[]
   journal: JournalEntry[]
 }
