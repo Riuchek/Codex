@@ -1,5 +1,6 @@
 import { MODULE_ID, DEFAULT_RULES } from "../constants"
-import type { CodexSettings, EpithetRule } from "../types"
+import type { CodexSettings, EpithetRule, TestDieFaces } from "../types"
+import { TEST_DIE_OPTIONS } from "../types"
 
 const SETTINGS_KEY = "codexSettings"
 
@@ -8,6 +9,7 @@ export const CODEX_SETTINGS_KEY = SETTINGS_KEY
 const DEFAULT_SETTINGS: CodexSettings = {
   hpPath: "system.attributes.hp.value",
   attackFlavor: "attacking",
+  testDieFaces: 20,
   rules: DEFAULT_RULES,
 }
 
@@ -22,7 +24,11 @@ export function registerSettings(): void {
 
 export function getSettings(): CodexSettings {
   const saved = game.settings?.get(MODULE_ID as any, SETTINGS_KEY as any) as Partial<CodexSettings> | undefined
-  return { ...DEFAULT_SETTINGS, ...saved }
+  const merged = { ...DEFAULT_SETTINGS, ...saved }
+  if (!TEST_DIE_OPTIONS.includes(merged.testDieFaces as TestDieFaces)) {
+    merged.testDieFaces = DEFAULT_SETTINGS.testDieFaces
+  }
+  return merged
 }
 
 export async function saveSettings(patch: Partial<CodexSettings>): Promise<void> {

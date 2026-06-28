@@ -6,7 +6,8 @@ import {
 } from "../../data/SettingsManager"
 import { buildExport, downloadExport, pickAndImport } from "../../data/importExport"
 import { RuleEditorDialog } from "../dialogs/RuleEditorDialog"
-import type { CodexSettings, EpithetRule } from "../../types"
+import type { CodexSettings, EpithetRule, TestDieFaces } from "../../types"
+import { TEST_DIE_OPTIONS } from "../../types"
 
 const escapeHtml = (value: string): string =>
   foundry.utils.escapeHTML(value)
@@ -67,8 +68,12 @@ export class SettingsPanel {
   private static _syncSystemInputs(panel: Element, settings: CodexSettings): void {
     const hpInput = panel.querySelector('[data-setting="hpPath"]') as HTMLInputElement | null
     const flavorInput = panel.querySelector('[data-setting="attackFlavor"]') as HTMLInputElement | null
+    const testDieSelect = panel.querySelector('[data-setting="testDieFaces"]') as HTMLSelectElement | null
     if (hpInput && document.activeElement !== hpInput) hpInput.value = settings.hpPath
     if (flavorInput && document.activeElement !== flavorInput) flavorInput.value = settings.attackFlavor
+    if (testDieSelect && document.activeElement !== testDieSelect) {
+      testDieSelect.value = String(settings.testDieFaces)
+    }
   }
 
   private static async _handleClick(root: HTMLElement, e: Event): Promise<void> {
@@ -110,9 +115,11 @@ export class SettingsPanel {
     const panel = root.querySelector(".codex-settings-panel")
     const hpPath = (panel?.querySelector('[data-setting="hpPath"]') as HTMLInputElement)?.value.trim()
     const attackFlavor = (panel?.querySelector('[data-setting="attackFlavor"]') as HTMLInputElement)?.value.trim()
-    if (!hpPath) return
+    const testDieRaw = (panel?.querySelector('[data-setting="testDieFaces"]') as HTMLSelectElement)?.value
+    const testDieFaces = Number(testDieRaw) as TestDieFaces
+    if (!hpPath || !TEST_DIE_OPTIONS.includes(testDieFaces)) return
 
-    await saveSettings({ hpPath, attackFlavor })
+    await saveSettings({ hpPath, attackFlavor, testDieFaces })
     this.refresh(root)
     ui.notifications?.info(`Codex | ${t("CODEX.SettingsSaved")}`)
   }

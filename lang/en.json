@@ -47,6 +47,8 @@
   "CODEX.SettingHpPathHint": "Path to the HP attribute in the current system. E.g: system.attributes.hp.value",
   "CODEX.SettingAttackFlavor": "Attack Chat Flavor",
   "CODEX.SettingAttackFlavorHint": "Word that identifies attack messages in chat. E.g: 'attacking' for Shadowdark, 'attack' for D&D 5e.",
+  "CODEX.SettingTestDie": "Test Die",
+  "CODEX.SettingTestDieHint": "Only this die type counts for critical hits and critical fails. E.g: d20 for D&D 5e and Shadowdark.",
   "CODEX.SettingsSystem": "System",
   "CODEX.Save": "Save",
   "CODEX.SettingsSaved": "Settings saved.",

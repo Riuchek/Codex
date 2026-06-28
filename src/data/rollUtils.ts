@@ -38,27 +38,34 @@ function dieResults(die: any): number[] {
   return []
 }
 
-function findD20(roll: Roll<any> | undefined): any | undefined {
-  if (!roll) return undefined
-  return getRollDice(roll).find((d: any) => d.faces === 20)
+export function findDieByFaces(roll: Roll<any> | undefined, faces: number): any | undefined {
+  if (!roll || !faces) return undefined
+  return getRollDice(roll).find((d: any) => d.faces === faces)
+}
+
+export function isCriticalOnDie(roll: Roll<any> | undefined, faces: number): boolean {
+  const die = findDieByFaces(roll, faces)
+  if (!die) return false
+  return dieResults(die).some(r => r === faces)
+}
+
+export function isCritFailOnDie(roll: Roll<any> | undefined, faces: number): boolean {
+  const die = findDieByFaces(roll, faces)
+  if (!die) return false
+  return dieResults(die).some(r => r === 1)
 }
 
 export function isD20Critical(roll: Roll<any> | undefined): boolean {
-  const d20 = findD20(roll)
-  if (!d20) return false
-  return dieResults(d20).some(r => r === 20)
+  return isCriticalOnDie(roll, 20)
 }
 
 export function isD20CritFail(roll: Roll<any> | undefined): boolean {
-  const d20 = findD20(roll)
-  if (!d20) return false
-  return dieResults(d20).some(r => r === 1)
+  return isCritFailOnDie(roll, 20)
 }
 
 export function isMaxOnMainDie(roll: Roll<any> | undefined): boolean {
   if (!roll) return false
-  const dice = getRollDice(roll)
-  const die = dice[0] ?? findD20(roll)
+  const die = getRollDice(roll)[0]
   if (!die) return false
   const faces = die.faces ?? 20
   return dieResults(die).some(r => r === faces)
@@ -66,8 +73,7 @@ export function isMaxOnMainDie(roll: Roll<any> | undefined): boolean {
 
 export function isNatural1OnMainDie(roll: Roll<any> | undefined): boolean {
   if (!roll) return false
-  const dice = getRollDice(roll)
-  const die = dice[0] ?? findD20(roll)
+  const die = getRollDice(roll)[0]
   if (!die) return false
   return dieResults(die).some(r => r === 1)
 }

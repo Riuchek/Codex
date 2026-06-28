@@ -169,6 +169,15 @@
             <input class="codex-input" type="text" data-setting="attackFlavor" value="{{@root.settings.attackFlavor}}"/>
           </div>
           <div class="settings-row">
+            <label>{{localize "CODEX.SettingTestDie"}}</label>
+            <select class="codex-input codex-select" data-setting="testDieFaces">
+              {{#each @root.testDieOptions}}
+              <option value="{{this.faces}}" {{#if this.selected}}selected{{/if}}>d{{this.faces}}</option>
+              {{/each}}
+            </select>
+          </div>
+          <p class="settings-hint">{{localize "CODEX.SettingTestDieHint"}}</p>
+          <div class="settings-row">
             <button class="codex-btn" data-action="save-system-settings">{{localize "CODEX.Save"}}</button>
           </div>
         </div>

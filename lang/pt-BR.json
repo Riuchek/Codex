@@ -47,6 +47,8 @@
   "CODEX.SettingHpPathHint": "Path do atributo de HP no sistema atual. Ex: system.attributes.hp.value",
   "CODEX.SettingAttackFlavor": "Texto de ataque no chat",
   "CODEX.SettingAttackFlavorHint": "Palavra que identifica mensagens de ataque no chat. Ex: 'attacking' para Shadowdark, 'attack' para D&D 5e.",
+  "CODEX.SettingTestDie": "Dado de teste",
+  "CODEX.SettingTestDieHint": "Somente este dado conta para críticos e falhas críticas. Ex: d20 para D&D 5e e Shadowdark.",
   "CODEX.SettingsSystem": "Sistema",
   "CODEX.Save": "Salvar",
   "CODEX.SettingsSaved": "Configurações salvas.",

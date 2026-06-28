@@ -1,17 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
 /* ── Variáveis ────────────────────────────────────────────────── */
 :root {
-  --codex-parchment:     #f4e4c1;
-  --codex-parchment-dark: #e8d5a3;
-  --codex-ink:           #2c1810;
-  --codex-ink-light:     #5c3d2e;
-  --codex-red:           #8b1a1a;
-  --codex-gold:          #c9922a;
-  --codex-gold-light:    #e8b84b;
-  --codex-border:        #8b6914;
-  --codex-shadow:        rgba(0,0,0,0.6);
-  --codex-sidebar-bg:    #1a0f0a;
+  --codex-parchment:      #f7edd8;
+  --codex-parchment-dark: #e5d4b0;
+  --codex-ink:            #1f120c;
+  --codex-ink-light:      #3a2418;
+  --codex-ink-muted:      #5c4030;
+  --codex-red:            #7a1212;
+  --codex-gold:           #a87418;
+  --codex-gold-light:     #d4a034;
+  --codex-border:         #7a5a12;
+  --codex-shadow:         rgba(0, 0, 0, 0.55);
+  --codex-sidebar-bg:     #140c08;
+  --codex-font-body:      'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --codex-font-display:   'Cinzel', Georgia, serif;
 }
 
 /* ── Janela do Foundry ────────────────────────────────────────── */
@@ -27,11 +30,13 @@
 }
 
 #codex-app .window-header {
-  background: linear-gradient(135deg, #1a0f0a 0%, #2c1810 50%, #1a0f0a 100%) !important;
+  background: linear-gradient(135deg, #140c08 0%, #2c1810 50%, #140c08 100%) !important;
   border-bottom: 2px solid var(--codex-gold) !important;
-  font-family: 'Cinzel', serif !important;
-  color: var(--codex-gold-light) !important;
-  text-shadow: 0 0 10px rgba(201,146,42,0.5) !important;
+  font-family: var(--codex-font-display) !important;
+  color: #f5e6c8 !important;
+  text-shadow: none !important;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 #codex-app .window-content {
@@ -39,6 +44,10 @@
   background: transparent !important;
   overflow: hidden !important;
   color: var(--codex-ink);
+  font-family: var(--codex-font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
@@ -133,12 +142,13 @@
 }
 
 .codex-actor-item span {
-  font-family: 'Cinzel', serif;
-  font-size: 10px;
-  color: var(--codex-parchment);
+  font-family: var(--codex-font-display);
+  font-size: 11px;
+  font-weight: 600;
+  color: #f0dfc4;
   text-align: center;
   word-break: break-word;
-  opacity: 0.9;
+  line-height: 1.3;
 }
 
 /* ── Área principal ───────────────────────────────────────────── */
@@ -202,19 +212,20 @@
 }
 
 .codex-tab {
-  font-family: 'Cinzel', serif;
-  font-size: 12px;
-  color: var(--codex-ink-light);
-  padding: 6px 16px;
+  font-family: var(--codex-font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--codex-ink-muted);
+  padding: 8px 16px;
   cursor: pointer;
   border: 1px solid transparent;
   border-bottom: none;
   border-radius: 4px 4px 0 0;
-  transition: all 0.2s;
+  transition: color 0.2s, background 0.2s;
   position: relative;
   top: 2px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-transform: none;
 }
 
 .codex-tab:hover {
@@ -243,12 +254,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 14px;
-  background: rgba(139,105,20,0.08);
-  border: 1px solid rgba(139,105,20,0.2);
+  padding: 10px 14px;
+  background: rgba(122, 90, 18, 0.1);
+  border: 1px solid rgba(122, 90, 18, 0.28);
   border-radius: 3px;
-  font-family: 'EB Garamond', serif;
-  font-size: 15px;
+  font-family: var(--codex-font-body);
+  font-size: 16px;
+  font-weight: 500;
   color: var(--codex-ink);
   position: relative;
 }
@@ -267,8 +279,8 @@
 }
 
 .codex-stats li strong {
-  font-family: 'Cinzel', serif;
-  font-size: 17px;
+  font-family: var(--codex-font-display);
+  font-size: 18px;
   color: var(--codex-red);
   font-weight: 700;
   min-width: 32px;
@@ -285,14 +297,21 @@
 
 .codex-input {
   flex: 1;
-  background: rgba(139,105,20,0.08);
+  background: #fff8ea;
   border: 1px solid var(--codex-border);
   border-radius: 3px;
-  padding: 6px 10px;
-  font-family: 'EB Garamond', serif;
-  font-size: 14px;
+  padding: 7px 10px;
+  font-family: var(--codex-font-body);
+  font-size: 15px;
+  font-weight: 500;
   color: var(--codex-ink);
   outline: none;
+}
+
+.codex-select {
+  flex: 0 1 120px;
+  min-width: 100px;
+  cursor: pointer;
 }
 
 .codex-input:focus {
@@ -301,8 +320,8 @@
 }
 
 .codex-input::placeholder {
-  color: var(--codex-ink-light);
-  opacity: 0.6;
+  color: var(--codex-ink-muted);
+  opacity: 1;
   font-style: italic;
 }
 
@@ -328,9 +347,10 @@
   gap: 6px;
   padding: 5px 14px;
   border-radius: 2px;
-  font-family: 'EB Garamond', serif;
-  font-size: 14px;
-  background: rgba(139,105,20,0.1);
+  font-family: var(--codex-font-body);
+  font-size: 15px;
+  font-weight: 500;
+  background: rgba(122, 90, 18, 0.12);
   color: var(--codex-ink);
   border: 1px solid var(--codex-border);
   font-style: italic;
@@ -344,15 +364,16 @@
 
 /* ── Botões ───────────────────────────────────────────────────── */
 .codex-btn {
-  font-family: 'Cinzel', serif;
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-family: var(--codex-font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
   background: linear-gradient(135deg, #2c1810, #4a2c1a);
-  color: var(--codex-gold-light);
+  color: #f5e6c8;
   border: 1px solid var(--codex-gold);
   border-radius: 3px;
-  padding: 6px 14px;
+  padding: 7px 14px;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
@@ -365,11 +386,11 @@
 
 .codex-btn-icon {
   background: transparent;
-  border: 1px solid rgba(139,105,20,0.3);
+  border: 1px solid rgba(122, 90, 18, 0.45);
   border-radius: 3px;
   padding: 4px 8px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   transition: all 0.2s;
   color: var(--codex-ink-light);
 }
@@ -407,10 +428,10 @@
   position: absolute;
   left: -1px;
   top: 12px;
-  font-family: 'EB Garamond', serif;
+  font-family: var(--codex-font-body);
   font-size: 20px;
   color: var(--codex-gold);
-  opacity: 0.4;
+  opacity: 0.55;
   line-height: 1;
 }
 
@@ -422,11 +443,11 @@
 }
 
 .codex-entry-title {
-  font-family: 'Cinzel', serif;
-  font-size: 13px;
-  font-weight: 600;
+  font-family: var(--codex-font-display);
+  font-size: 14px;
+  font-weight: 700;
   color: var(--codex-red);
-  letter-spacing: 0.03em;
+  letter-spacing: 0.01em;
 }
 
 .codex-entry-actions {
@@ -441,10 +462,11 @@
 }
 
 .codex-entry-content {
-  font-family: 'EB Garamond', serif;
-  font-size: 14px;
+  font-family: var(--codex-font-body);
+  font-size: 15px;
+  font-weight: 500;
   color: var(--codex-ink);
-  line-height: 1.6;
+  line-height: 1.65;
   margin: 0 0 8px;
   white-space: pre-wrap;
 }
@@ -456,23 +478,22 @@
 }
 
 .codex-tag {
-  font-family: 'EB Garamond', serif;
-  font-size: 11px;
+  font-family: var(--codex-font-body);
+  font-size: 12px;
+  font-weight: 600;
   padding: 2px 8px;
-  background: rgba(139,105,20,0.12);
-  border: 1px solid rgba(139,105,20,0.25);
+  background: rgba(122, 90, 18, 0.16);
+  border: 1px solid rgba(122, 90, 18, 0.35);
   border-radius: 10px;
   color: var(--codex-ink-light);
   font-style: italic;
 }
 
-/* ── Vazio ────────────────────────────────────────────────────── */
 .codex-empty {
-  font-family: 'EB Garamond', serif;
+  font-family: var(--codex-font-body);
   font-style: italic;
-  color: var(--codex-ink-light);
-  opacity: 0.6;
-  font-size: 14px;
+  color: var(--codex-ink-muted);
+  font-size: 15px;
   text-align: center;
   margin-top: 32px;
 }
@@ -514,7 +535,7 @@
   border: 1px solid var(--codex-gold);
   border-radius: 3px;
   padding: 2px 6px;
-  font-family: 'Cinzel', serif;
+  font-family: var(--codex-font-display);
   font-size: 15px;
   color: var(--codex-red);
   text-align: right;
@@ -549,10 +570,11 @@
 }
 
 .settings-group-title {
-  font-family: 'Cinzel', serif;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-family: var(--codex-font-display);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0.02em;
   color: var(--codex-red);
   margin: 0 0 12px;
   display: flex;
@@ -566,14 +588,25 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
-  font-family: 'EB Garamond', serif;
-  font-size: 14px;
+  font-family: var(--codex-font-body);
+  font-size: 15px;
+  font-weight: 500;
   color: var(--codex-ink);
 }
 
 .settings-row label {
   min-width: 140px;
   color: var(--codex-ink-light);
+  font-weight: 600;
+}
+
+.settings-hint {
+  margin: 0 0 12px;
+  padding-left: 148px;
+  font-family: var(--codex-font-body);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--codex-ink-muted);
 }
 
 .settings-rules-list {
@@ -586,28 +619,28 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 10px;
-  background: rgba(139,105,20,0.05);
-  border: 1px solid rgba(139,105,20,0.15);
+  padding: 8px 10px;
+  background: rgba(122, 90, 18, 0.08);
+  border: 1px solid rgba(122, 90, 18, 0.22);
   border-radius: 3px;
-  font-family: 'EB Garamond', serif;
-  font-size: 13px;
-  color: var(--codex-ink);
-}
-
-.rule-icon { font-size: 16px; }
-
-.rule-label {
-  font-weight: 600;
-  min-width: 120px;
+  font-family: var(--codex-font-body);
+  font-size: 14px;
+  font-weight: 500;
   color: var(--codex-ink);
 }
 
 .rule-conditions {
   flex: 1;
-  color: var(--codex-ink-light);
-  font-size: 12px;
+  color: var(--codex-ink-muted);
+  font-size: 13px;
   font-style: italic;
+}
+.rule-icon { font-size: 16px; }
+
+.rule-label {
+  font-weight: 700;
+  min-width: 120px;
+  color: var(--codex-ink);
 }
 
 .rule-actions {
@@ -649,7 +682,7 @@
   border-radius: 3px;
   color: var(--codex-parchment);
   min-height: 32px;
-  font-family: 'EB Garamond', serif;
+  font-family: var(--codex-font-body);
   font-size: 14px;
   padding: 4px 8px;
 }
@@ -687,7 +720,7 @@
 
 .codex-rule-editor .rule-mode-row label {
   color: var(--codex-parchment);
-  font-family: 'EB Garamond', serif;
+  font-family: var(--codex-font-body);
   font-size: 13px;
   line-height: 1.1;
   min-width: 110px;
@@ -768,7 +801,7 @@
 }
 
 .journal-tag-chip {
-  font-family: 'EB Garamond', serif;
+  font-family: var(--codex-font-body);
   font-size: 11px;
   padding: 3px 10px;
   border-radius: 12px;
@@ -786,7 +819,7 @@
 }
 
 .codex-entry-content {
-  font-family: 'EB Garamond', serif;
+  font-family: var(--codex-font-body);
   line-height: 1.5;
   margin: 8px 0;
 }
@@ -794,7 +827,7 @@
 .codex-entry-content h2,
 .codex-entry-content h3,
 .codex-entry-content h4 {
-  font-family: 'Cinzel', serif;
+  font-family: var(--codex-font-display);
   margin: 8px 0 4px;
 }
 
@@ -807,7 +840,7 @@
 .codex-entry-editor input,
 .codex-entry-editor textarea {
   width: 100%;
-  font-family: 'EB Garamond', serif;
+  font-family: var(--codex-font-body);
 }
 
 .entry-markdown-hint {
@@ -900,7 +933,7 @@
 }
 
 .dashboard-header h2 {
-  font-family: 'Cinzel', serif;
+  font-family: var(--codex-font-display);
   margin: 0;
   color: var(--codex-ink);
 }
@@ -915,7 +948,7 @@
   width: 100%;
   min-width: 640px;
   border-collapse: collapse;
-  font-family: 'EB Garamond', serif;
+  font-family: var(--codex-font-body);
   font-size: 13px;
   color: var(--codex-ink) !important;
   background: var(--codex-parchment) !important;
@@ -937,7 +970,7 @@
 }
 
 #codex-app .codex-dashboard-table thead th {
-  font-family: 'Cinzel', serif;
+  font-family: var(--codex-font-display);
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -999,6 +1032,10 @@
   .codex-tab {
     font-size: 10px;
     padding: 5px 10px;
+  }
+
+  .settings-hint {
+    padding-left: 0;
   }
 
   .settings-row {

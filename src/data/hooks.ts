@@ -3,10 +3,8 @@ import { getSettings } from "./SettingsManager"
 import {
   getMessageRolls,
   getHpDelta,
-  isD20Critical,
-  isD20CritFail,
-  isMaxOnMainDie,
-  isNatural1OnMainDie,
+  isCriticalOnDie,
+  isCritFailOnDie,
   matchesAttackFlavor,
 } from "./rollUtils"
 
@@ -22,13 +20,14 @@ export function registerHooks() {
     if (!rolls.length) return
 
     const attackFlavor = getSettings().attackFlavor
+    const testDieFaces = getSettings().testDieFaces
     const isAttack = matchesAttackFlavor(message, attackFlavor)
 
     if (isAttack) {
       const attackRoll     = rolls[0]
       const damageRoll     = rolls[1]
-      const isCritical     = isD20Critical(attackRoll)
-      const isCriticalFail = isD20CritFail(attackRoll)
+      const isCritical     = isCriticalOnDie(attackRoll, testDieFaces)
+      const isCriticalFail = isCritFailOnDie(attackRoll, testDieFaces)
       const damageDealt    = damageRoll?.total ?? 0
 
       await incrementStats(actor, {
@@ -44,8 +43,8 @@ export function registerHooks() {
     }
 
     const roll       = rolls[0]
-    const isCritical = isMaxOnMainDie(roll)
-    const isCritFail = isNatural1OnMainDie(roll)
+    const isCritical = isCriticalOnDie(roll, testDieFaces)
+    const isCritFail = isCritFailOnDie(roll, testDieFaces)
 
     await incrementStats(actor, {
       criticals:     isCritical ? 1 : 0,

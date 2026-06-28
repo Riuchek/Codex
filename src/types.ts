@@ -51,9 +51,13 @@ export interface EpithetRule {
   conditions: Condition[]
 }
 
+export const TEST_DIE_OPTIONS = [4, 6, 8, 10, 12, 20, 100] as const
+export type TestDieFaces = (typeof TEST_DIE_OPTIONS)[number]
+
 export interface CodexSettings {
   hpPath: string
   attackFlavor: string
+  testDieFaces: TestDieFaces
   rules: EpithetRule[]
 }
 

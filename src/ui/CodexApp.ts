@@ -7,6 +7,7 @@ import { EpithetsPanel } from "./panels/EpithetsPanel"
 import { SettingsPanel } from "./panels/SettingsPanel"
 import { DashboardPanel } from "./panels/DashboardPanel"
 import type { ActorRecord, EpithetRule, CodexSettings } from "../types"
+import { TEST_DIE_OPTIONS } from "../types"
 
 export interface CodexAppState {
   activeActorId: string
@@ -55,6 +56,10 @@ export class CodexApp extends HandlebarsApplicationMixin(ApplicationV2) {
       actors,
       isGM: game.user?.isGM ?? false,
       settings,
+      testDieOptions: TEST_DIE_OPTIONS.map(faces => ({
+        faces,
+        selected: faces === settings.testDieFaces,
+      })),
       globalRules,
       dashboardHtml: DashboardPanel.render(actors),
     }
